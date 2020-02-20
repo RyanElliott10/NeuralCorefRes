@@ -3,7 +3,9 @@ import nltk
 from nltk.wsd import lesk
 from nltk.corpus import stopwords
 from nltk.parse.corenlp import CoreNLPDependencyParser
-from stanford_parser import StanfordParser
+
+from feature_extraction.stanford_parser import StanfordParser
+from feature_extraction.gender_classifier import GenderClassifier
 
 pretty_printer = pprint.PrettyPrinter()
 
