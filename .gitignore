@@ -1,4 +1,6 @@
 data/
+*.DS_Store
+stanford-corenlp-full-2018-10-05/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
