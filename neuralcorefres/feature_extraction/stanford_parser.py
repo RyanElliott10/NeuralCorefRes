@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Sequence
 
 from nltk.parse.corenlp import CoreNLPDependencyParser
 
@@ -24,9 +24,9 @@ class StanfordParser:
         result = self.dependency_parser.raw_parse(sent)
         return list(result.__next__().triples())
 
-    def dependency_grammars_lst(self, sents: str) -> List:
-        results: List[DependencyGrammar] = [
-            self.dependency_grammars(sent) for sent in sents]
+    def dependency_grammars_lst(self, sents: str) -> List[DependencyGrammar]:
+        results = [self.dependency_grammars(sent) for sent in sents]
+        print("RESULTS:", results)
         print("RESULTS:", results[0][0])
         return results
 
@@ -34,7 +34,7 @@ class StanfordParser:
         parse, = self.dependency_parser.raw_parse(sent)
         return parse.to_conll(4)
 
-    def tags(self, sents: List) -> List:
+    def tags(self, sents: Sequence) -> List:
         if not isinstance(sents, list):
             sents = [sents]
         return self.dependency_parser.tag(sents)
