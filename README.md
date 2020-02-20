@@ -35,3 +35,8 @@ Since I understand it can be confusing trying to traverse other's file hiearchie
 Using the above file hierarchy, I run the below command from `./` to start the Stanford CoreNLP server:
 
 `java -cp "./data/stanford-corenlp-full-2018-10-05/*" -mx4g edu.stanford.nlp.pipeline.StanfordCoreNLPServer -port 9000 -timeout 15000`
+
+
+## Code Conventions
+### Typing
+All code in this repo makes use of PEP 484, Python3 type hints. Generally, typing variables within functions is redundant and leads to excessive typing. Therefore, types are typically only explicitly stated in function signatures. However, per any rule in computer science, there are exceptions; if a variable is particularly ambiguous, explicitly stating its types makes sense should be encouraged.
