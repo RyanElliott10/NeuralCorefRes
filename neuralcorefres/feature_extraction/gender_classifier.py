@@ -1,5 +1,5 @@
 import random
-from typing import Dict, List, Sequence, Set, Tuple, cast
+from typing import Dict, List, Tuple
 
 import nltk
 from nltk.corpus import names
