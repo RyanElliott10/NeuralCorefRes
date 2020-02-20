@@ -1,8 +1,8 @@
-from typing import Set, Dict, List, Tuple
 import random
-from nltk.corpus import names
-import nltk
+from typing import Dict, List, Set, Tuple
 
+import nltk
+from nltk.corpus import names
 
 # Typealiases
 TaggedSentence = List[Tuple[str, str]]
@@ -65,14 +65,3 @@ class GenderClassifier:
         tokenized: List = nltk.word_tokenize(sent)
         for word in tokenized:
             yield (word, self.get_gender(word))
-
-
-if __name__ == "__main__":
-    classifier = GenderClassifier()
-
-    sent = 'Cailey and her gal friend went to the ball.'
-    tagged = nltk.pos_tag(nltk.word_tokenize(sent))
-    for word in tagged:
-        if word[1] in GENDERED_NOUN_PREFIXES:
-            print(word, classifier.get_gender(word[0]))
-    print(classifier.get_gender('marine'))

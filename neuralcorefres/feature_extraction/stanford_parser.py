@@ -1,6 +1,6 @@
-from typing import List, Tuple, Optional
-from nltk.parse.corenlp import CoreNLPDependencyParser
+from typing import Dict, List, Optional, Tuple
 
+from nltk.parse.corenlp import CoreNLPDependencyParser
 
 DependencyGrammar = List[Tuple[Tuple[str, str], str, Tuple[str, str]]]
 
@@ -30,7 +30,7 @@ class StanfordParser:
         print("RESULTS:", results[0][0])
         return results
 
-    def conll_parse(self, sent: str) -> dict:
+    def conll_parse(self, sent: str) -> Dict:
         parse, = self.dependency_parser.raw_parse(sent)
         return parse.to_conll(4)
 

@@ -1,11 +1,12 @@
 import pprint
-import nltk
-from nltk.wsd import lesk
-from nltk.corpus import stopwords
-from nltk.parse.corenlp import CoreNLPDependencyParser
 
+import nltk
+from nltk.corpus import stopwords
+from nltk.wsd import lesk
+
+from feature_extraction.gender_classifier import (GENDERED_NOUN_PREFIXES,
+                                                  GenderClassifier)
 from feature_extraction.stanford_parser import StanfordParser
-from feature_extraction.gender_classifier import GenderClassifier
 
 pretty_printer = pprint.PrettyPrinter()
 
@@ -47,5 +48,17 @@ def stanford():
     print(f"{word}: {wsd.definition()}")
 
 
+def gender_demo():
+    classifier = GenderClassifier()
+
+    sent = 'Cailey and her gal friend went to the ball.'
+    tagged = nltk.pos_tag(nltk.word_tokenize(sent))
+    for word in tagged:
+        if word[1] in GENDERED_NOUN_PREFIXES:
+            print(word, classifier.get_gender(word[0]))
+    print(classifier.get_gender('marine'))
+
+
 if __name__ == "__main__":
     stanford()
+    gender_demo()
