@@ -1,9 +1,11 @@
 import pprint
+from typing import List
 
 import nltk
 from nltk.corpus import stopwords
 from nltk.wsd import lesk
 
+import parsedata.gap_parser as GAPParse
 from feature_extraction.gender_classifier import (GENDERED_NOUN_PREFIXES,
                                                   GenderClassifier)
 from feature_extraction.stanford_parser import StanfordParser
@@ -60,5 +62,11 @@ def gender_demo():
 
 
 if __name__ == "__main__":
-    stanford()
-    gender_demo()
+    # stanford()
+    # gender_demo()
+    data: List[GAPParse.GAPCoreferenceDatapoint] = GAPParse.get_GAP_data(GAPParse.GAPDataType.TRAIN)
+
+    print(data[0].text)
+    sparser = StanfordParser()
+    deps = sparser.dependency_grammars_lst([d.text for d in data[:50]])
+    pretty_printer.pprint(deps)

@@ -1,5 +1,6 @@
-from typing import List
 from enum import Enum
+from typing import List
+import pandas as pd
 
 
 """
@@ -17,8 +18,8 @@ class GAPDataType(Enum):
     VALIDATION = 2
 
 
-class GapCoreferenceDatapoint:
-    def __init__(self, identifier: str, text: str, pronoun: str, pronoun_offset: int, a: str, a_offset: int, a_coref: bool, b: str, b_offset: int, b_coref: bool, url: str):
+class GAPCoreferenceDatapoint:
+    def __init__(self, identifier: str, text: str, pronoun: str, pronoun_offset: int, a: str, a_offset: int, a_coref: bool, b: str, b_offset: int, b_coref: bool):
         self.id = identifier
         self.text = text
         self.pronoun = pronoun
@@ -31,22 +32,17 @@ class GapCoreferenceDatapoint:
         self.b_coref = b_coref
 
 
-BASE_FILEPATH = "../../data/google_gap-coreference/"
-FILE_TYPES = {
+_BASE_FILEPATH = "../data/google_gap-coreference/"
+_FILE_TYPES = {
     GAPDataType.TRAIN: "gap-development.tsv",
     GAPDataType.TEST: "gap-test.tsv",
     GAPDataType.VALIDATION: "gap-validation.tsv"
 }
 
 
-def get_GAP_data(data_type: GAPDataType, basepath: str = BASE_FILEPATH) -> List[GapCoreferenceDatapoint]:
-    full_filepath = basepath + FILE_TYPES[data_type]
-    data: List[GapCoreferenceDatapoint] = []
-    with open(full_filepath, "r") as f:
-        for line in f:
-            delimited = line.split('\t')
-            if (delimited[2] == "Pronoun"):
-                continue
-            data.append(GapCoreferenceDatapoint(*delimited))
+def get_GAP_data(data_type: GAPDataType, basepath: str = _BASE_FILEPATH) -> List[GAPCoreferenceDatapoint]:
+    full_filepath = basepath + _FILE_TYPES[data_type]
+    df = pd.read_csv(full_filepath, sep="\t").drop(["URL"], axis=1)
+    data = [GAPCoreferenceDatapoint(*row[1]) for row in df.iterrows()]
 
     return data

@@ -24,10 +24,8 @@ class StanfordParser:
         result = self.dependency_parser.raw_parse(sent)
         return list(result.__next__().triples())
 
-    def dependency_grammars_lst(self, sents: str) -> List[DependencyGrammar]:
+    def dependency_grammars_lst(self, sents: List[str]) -> List[DependencyGrammar]:
         results = [self.dependency_grammars(sent) for sent in sents]
-        print("RESULTS:", results)
-        print("RESULTS:", results[0][0])
         return results
 
     def conll_parse(self, sent: str) -> Dict:
