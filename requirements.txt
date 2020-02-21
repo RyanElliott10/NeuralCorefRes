@@ -100,6 +100,6 @@ update-checker==0.16
 urllib3==1.25.3
 wasabi==0.6.0
 websocket-client==0.56.0
-Werkzeug==0.14.1
+Werkzeug==0.15.3
 wrapt==1.11.2
 zipp==2.2.0
