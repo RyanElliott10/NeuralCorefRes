@@ -5,7 +5,7 @@ import nltk
 from nltk.corpus import names
 
 
-HARD_GENDERED_WORDS: Dict[str, str] = {
+HARD_GENDERED_WORDS = {
     'she': 'female',
     'her': 'female',
     'she\'d': 'female',
@@ -21,7 +21,7 @@ class GenderClassifier:
         self.classifier = self.train_model()
 
     @staticmethod
-    def gender_features(word: str) -> Dict:
+    def gender_features(word: str) -> Dict[str, str]:
         return {
             'last_letter': word[-1:],
             'last_two_letters': word[-2:],
