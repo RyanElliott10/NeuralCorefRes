@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+# NeuralCorefRes main
+#
+# Author: Ryan Elliott <ryane.elliott31@gmail.com>
+#
+# For license information, see LICENSE
+
 import pprint
 from typing import List
 
@@ -8,9 +15,14 @@ from nltk.wsd import lesk
 import parsedata.gap_parser as GAPParse
 from feature_extraction.gender_classifier import (GENDERED_NOUN_PREFIXES,
                                                   GenderClassifier)
-from feature_extraction.stanford_parser import StanfordParser
+from feature_extraction.stanford_parse_api import StanfordParseAPI
 
 pretty_printer = pprint.PrettyPrinter()
+
+"""
+TODO: Parse the data and store the features of each sentence in tsv files to
+avoid absurd parsing (and therefore training) times.
+"""
 
 REMOVED_STOPWORDS = set(['my', 'he', 'you\'ll', 'her', 'i', 'hers', 'who', 'your',
                          'himself', 'yourself', 'own', 'you\'re', 'you\'d', 'we',
@@ -21,39 +33,9 @@ REMOVED_STOPWORDS = set(['my', 'he', 'you\'ll', 'her', 'i', 'hers', 'who', 'your
 STOPWORDS = set.difference(set(stopwords.words('english')), REMOVED_STOPWORDS)
 
 
-def stanford():
-    sent_one = u'I shot an elephant in my pajamas.'
-    sent_two = u'I don\'t like when you do that.'
-    sent_three = u'My neck is itchy.'
-    sent_four = u'I\'m super excited to play racquetball because I\'m going to beat your ass.'
-    sent_five = u'The lawyer questioned the witness.'
-
-    sent_four = ' '.join(
-        [w.lower() for w in sent_four.split() if w.lower() not in STOPWORDS])
-
-    print(f"{sent_five}\n")
-    sparser = StanfordParser()
-    dependencies = sparser.dependency_grammars_lst(
-        [sent_one, sent_two, sent_three, sent_four, sent_five])
-    print("Dependencies:")
-    pretty_printer.pprint(dependencies)
-
-    tags = sparser.tags(sent_five)
-    print("\nTags:")
-    pretty_printer.pprint(tags)
-
-    conll = sparser.conll_parse(sent_five)
-    print(f"\nCONLL parse:\n{conll}")
-
-    word = 'witness'
-    wsd = lesk(nltk.word_tokenize(sent_five), word)
-    print(f"{word}: {wsd.definition()}")
-
-
-def gender_demo():
+def gender_demo(sent):
     classifier = GenderClassifier()
 
-    sent = 'Cailey and her gal friend went to the ball.'
     tagged = nltk.pos_tag(nltk.word_tokenize(sent))
     for word in tagged:
         if word[1] in GENDERED_NOUN_PREFIXES:
@@ -62,11 +44,14 @@ def gender_demo():
 
 
 if __name__ == "__main__":
-    # stanford()
-    # gender_demo()
-    data: List[GAPParse.GAPCoreferenceDatapoint] = GAPParse.get_GAP_data(GAPParse.GAPDataType.TRAIN)
+    data: List[GAPParse.GAPCoreferenceDatapoint] = GAPParse.get_GAP_data(
+        GAPParse.GAPDataType.TRAIN)
 
     print(data[0].text)
-    sparser = StanfordParser()
-    deps = sparser.dependency_grammars_lst([d.text for d in data[:50]])
-    pretty_printer.pprint(deps)
+    sparser = StanfordParseAPI()
+    deps = sparser.dependency_parse([d.text for d in data[:50]])
+    pretty_printer.pprint(deps[0])
+
+    const_parse = sparser.constituency_parse([d.text for d in data[:2]])
+    for el in const_parse:
+        print(el)

@@ -1,5 +1,13 @@
+# -*- coding: utf-8 -*-
+# Parser for Google's GAP-Coreference dataset
+#
+# Author: Ryan Elliott <ryane.elliott31@gmail.com>
+#
+# For license information, see LICENSE
+
 from enum import Enum
 from typing import List
+
 import pandas as pd
 
 
@@ -43,6 +51,4 @@ _FILE_TYPES = {
 def get_GAP_data(data_type: GAPDataType, basepath: str = _BASE_FILEPATH) -> List[GAPCoreferenceDatapoint]:
     full_filepath = basepath + _FILE_TYPES[data_type]
     df = pd.read_csv(full_filepath, sep="\t").drop(["URL"], axis=1)
-    data = [GAPCoreferenceDatapoint(*row[1]) for row in df.iterrows()]
-
-    return data
+    return [GAPCoreferenceDatapoint(*row[1]) for row in df.iterrows()]
