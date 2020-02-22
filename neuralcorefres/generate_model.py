@@ -5,19 +5,25 @@
 #
 # For license information, see LICENSE
 
+import os
 import pprint
+import sys
 from typing import List
+sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
 
 import nltk
 from nltk.corpus import stopwords
-from nltk.wsd import lesk
 
-import parsedata.gap_parser as GAPParse
-from feature_extraction.gender_classifier import (GENDERED_NOUN_PREFIXES,
-                                                  GenderClassifier)
-from feature_extraction.stanford_parse_api import StanfordParseAPI
+import neuralcorefres.parsedata.gap_parser as GAPParse
+from neuralcorefres.common import Sentence
+from neuralcorefres.feature_extraction.gender_classifier import (
+    GENDERED_NOUN_PREFIXES, GenderClassifier)
+from neuralcorefres.feature_extraction.stanford_parse_api import \
+    StanfordParseAPI
+
 
 pretty_printer = pprint.PrettyPrinter()
+
 
 """
 TODO: Parse the data and store the features of each sentence in tsv files to
@@ -33,7 +39,7 @@ REMOVED_STOPWORDS = set(['my', 'he', 'you\'ll', 'her', 'i', 'hers', 'who', 'your
 STOPWORDS = set.difference(set(stopwords.words('english')), REMOVED_STOPWORDS)
 
 
-def gender_demo(sent):
+def gender_demo(sent: str):
     classifier = GenderClassifier()
 
     tagged = nltk.pos_tag(nltk.word_tokenize(sent))
@@ -44,14 +50,13 @@ def gender_demo(sent):
 
 
 if __name__ == "__main__":
-    data: List[GAPParse.GAPCoreferenceDatapoint] = GAPParse.get_GAP_data(
-        GAPParse.GAPDataType.TRAIN)
+    con = StanfordParseAPI.constituency_parse("Bobby ran to the park.")
+    dep = StanfordParseAPI.dependency_parse("Bobby ran to the park.")
+    for d in dep:
+        print(d.reveal())
 
-    print(data[0].text)
-    sparser = StanfordParseAPI()
-    deps = sparser.dependency_parse([d.text for d in data[:50]])
-    pretty_printer.pprint(deps[0])
-
-    const_parse = sparser.constituency_parse([d.text for d in data[:2]])
-    for el in const_parse:
-        print(el)
+    sents: List[GAPParse.GAPCoreferenceDatapoint] = GAPParse.get_GAP_data(
+        GAPParse.GAPDataType.TRAIN, class_type=Sentence)
+    
+    for sent in sents[:1]:
+        sent.parse()
