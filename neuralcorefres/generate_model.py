@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # NeuralCorefRes main
 #
-# Author: Ryan Elliott <ryane.elliott31@gmail.com>
+# Author: Ryan Elliott <ryan.elliott31@gmail.com>
 #
 # For license information, see LICENSE
 
@@ -20,6 +20,9 @@ from neuralcorefres.feature_extraction.gender_classifier import (
     GENDERED_NOUN_PREFIXES, GenderClassifier)
 from neuralcorefres.feature_extraction.stanford_parse_api import \
     StanfordParseAPI
+from neuralcorefres.util.data_storage import write_constituency_file, write_dependency_file
+
+from progress.bar import IncrementalBar
 
 
 pretty_printer = pprint.PrettyPrinter()
@@ -50,13 +53,26 @@ def gender_demo(sent: str):
 
 
 if __name__ == "__main__":
-    con = StanfordParseAPI.constituency_parse("Bobby ran to the park.")
-    dep = StanfordParseAPI.dependency_parse("Bobby ran to the park.")
-    for d in dep:
-        print(d.reveal())
+    # con = [StanfordParseAPI.constituency_parse("Bobby ran to the bench. He then sat down on it.")]
+    # dep = [StanfordParseAPI.dependency_parse("Bobby ran to the bench. He then sat down on it.")] * 5
+    # # for d in dep:
+    # #     print(d.reveal())
+    # # print(con)
+
+    # # write_constituency_file(con)
+    # write_dependency_file(dep, identifiers=[0, 1, 2, 3, 4])
 
     sents: List[GAPParse.GAPCoreferenceDatapoint] = GAPParse.get_GAP_data(
         GAPParse.GAPDataType.TRAIN, class_type=Sentence)
     
-    for sent in sents[:1]:
+    bar = IncrementalBar('Parsing Sentences...', max=len(sents))
+    for sent in sents:
         sent.parse()
+        bar.next()
+
+    
+    write_dependency_file([sent._dep_parse for sent in sents], identifiers=[sent._id for sent in sents])
+
+    # print(sents[0]._text)
+    # for dep in sents[0]._dep_parse:
+    #     print(dep.reveal())

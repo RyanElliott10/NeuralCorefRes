@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Parser for Google's GAP-Coreference dataset
 #
-# Author: Ryan Elliott <ryane.elliott31@gmail.com>
+# Author: Ryan Elliott <ryan.elliott31@gmail.com>
 #
 # For license information, see LICENSE
 
@@ -9,6 +9,7 @@ from enum import Enum
 from typing import List
 
 import pandas as pd
+
 
 """
 This dataset is far from ideal; it only contains very few pronouns (he, her,

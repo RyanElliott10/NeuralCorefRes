@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Interface to StanfordCoreNLP
 #
-# Author: Ryan Elliott <ryane.elliott31@gmail.com>
+# Author: Ryan Elliott <ryan.elliott31@gmail.com>
 #
 # For license information, see LICENSE
 
