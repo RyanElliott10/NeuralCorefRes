@@ -8,21 +8,23 @@
 import os
 import pprint
 import sys
+import re
 from typing import List
-sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../")
 
 import nltk
 from nltk.corpus import stopwords
+from progress.bar import IncrementalBar
 
+sys.path.append(os.path.abspath(f"{os.path.dirname(os.path.abspath(__file__))}/../"))
 import neuralcorefres.parsedata.gap_parser as GAPParse
 from neuralcorefres.common import Sentence
 from neuralcorefres.feature_extraction.gender_classifier import (
     GENDERED_NOUN_PREFIXES, GenderClassifier)
 from neuralcorefres.feature_extraction.stanford_parse_api import \
     StanfordParseAPI
-from neuralcorefres.util.data_storage import write_constituency_file, write_dependency_file
-
-from progress.bar import IncrementalBar
+from neuralcorefres.util.data_storage import (write_constituency_file,
+                                              write_dependency_file)
+from neuralcorefres.feature_extraction.util import findall_entities, spacy_entities
 
 
 pretty_printer = pprint.PrettyPrinter()
@@ -52,27 +54,24 @@ def gender_demo(sent: str):
     print(classifier.get_gender('marine'))
 
 
-if __name__ == "__main__":
-    # con = [StanfordParseAPI.constituency_parse("Bobby ran to the bench. He then sat down on it.")]
-    # dep = [StanfordParseAPI.dependency_parse("Bobby ran to the bench. He then sat down on it.")] * 5
-    # # for d in dep:
-    # #     print(d.reveal())
-    # # print(con)
-
-    # # write_constituency_file(con)
-    # write_dependency_file(dep, identifiers=[0, 1, 2, 3, 4])
-
+def yeet():
     sents: List[GAPParse.GAPCoreferenceDatapoint] = GAPParse.get_GAP_data(
         GAPParse.GAPDataType.TRAIN, class_type=Sentence)
-    
+
     bar = IncrementalBar('Parsing Sentences...', max=len(sents))
     for sent in sents:
         sent.parse()
         bar.next()
 
-    
-    write_dependency_file([sent._dep_parse for sent in sents], identifiers=[sent._id for sent in sents])
+    write_dependency_file([sent._dep_parse for sent in sents], identifiers=[
+                          sent._id for sent in sents])
 
-    # print(sents[0]._text)
-    # for dep in sents[0]._dep_parse:
-    #     print(dep.reveal())
+
+if __name__ == "__main__":
+    sent = u"Bobby Tarantino ran to the bench. He then sat down on it."
+    con = [StanfordParseAPI.constituency_parse(sent)]
+    dep = [StanfordParseAPI.dependency_parse(sent)] * 5
+
+    tagged = StanfordParseAPI.tags(sent)
+    print(f"{tagged}\n")
+    print(findall_entities(tagged))

@@ -22,7 +22,7 @@ def write_constituency_file(constitency_parses: ConstituencyGrammar, filename: s
     print(constitency_parses)
 
 
-def write_dependency_file(dependency_parses: List[List[DependencyGrammar]], filename: str = "gap_constituency_parses.csv", identifiers: List[str] = None):
+def write_dependency_file(dependency_parses: List[List[DependencyGrammar]], filename: str = "gap_dependency_parses.csv", identifiers: List[str] = None):
     df = None
     for i, dep_parse in enumerate(dependency_parses):
         if identifiers:

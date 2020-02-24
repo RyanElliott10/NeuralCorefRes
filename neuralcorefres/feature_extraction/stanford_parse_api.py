@@ -59,5 +59,5 @@ class StanfordParseAPI:
         return list(StanfordParseAPI._constituency_parse(sent))[0]
 
     @staticmethod
-    def tags(sents: Sequence[str]) -> List[Tuple[str, str]]:
-        return StanfordParseAPI._dependency_parser.tag(sents)
+    def tags(sent: str) -> List[Tuple[str, str]]:
+        return StanfordParseAPI._dependency_parser.tag([sent])

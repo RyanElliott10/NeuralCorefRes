@@ -1,9 +1,6 @@
 # NeuralCorefRes
 Coreference resolution
 
-## Setup
-Add `NEURAL_COREF_RES_REL_PATH="/path/to/NeuralCorefRes/"`, as an environment variable. `sentence.py` makes use of this to avoid using relative imports.
-
 ## Usage
 ### StanfordCoreNLP
 Download the Stanford CoreNLP and CoreNLP server [utility here](https://stanfordnlp.github.io/CoreNLP/download.html). Unzip the file and move to a data directory by running the following commands:

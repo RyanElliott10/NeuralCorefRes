@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# NeuralCorefRes main
+# Classes used to interpret Stanford's CoreNLP server output.
 #
 # Author: Ryan Elliott <ryan.elliott31@gmail.com>
 #
