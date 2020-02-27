@@ -25,6 +25,7 @@ from neuralcorefres.feature_extraction.stanford_parse_api import \
 from neuralcorefres.util.data_storage import (write_constituency_file,
                                               write_dependency_file)
 from neuralcorefres.feature_extraction.util import findall_entities, spacy_entities
+from neuralcorefres.util.wordembbeding import *
 
 
 pretty_printer = pprint.PrettyPrinter()
@@ -65,13 +66,21 @@ def yeet():
 
     write_dependency_file([sent._dep_parse for sent in sents], identifiers=[
                           sent._id for sent in sents])
+    
+def word_embeddings():
+    sents: List[GAPParse.GAPCoreferenceDatapoint] = GAPParse.get_GAP_data(
+        [GAPParse.GAPDataType.TRAIN, GAPParse.GAPDataType.VALIDATION], class_type=Sentence)
+    # embedding_tensor(model_path='.././data/models/word_embeddings/google-vectors.model', sents=sents)
+    embedding_tensor(model_path='.././data/models/word_embeddings/gap-vectors.model', sents=sents)
+    
 
 
 if __name__ == "__main__":
-    sent = u"Bobby Tarantino ran to the bench. He then sat down on it."
-    con = [StanfordParseAPI.constituency_parse(sent)]
-    dep = [StanfordParseAPI.dependency_parse(sent)] * 5
+    word_embeddings()
+    # sent = u"Bobby Tarantino ran to the bench. He then sat down on it."
+    # con = [StanfordParseAPI.constituency_parse(sent)]
+    # dep = [StanfordParseAPI.dependency_parse(sent)] * 5
 
-    tagged = StanfordParseAPI.tags(sent)
-    print(f"{tagged}\n")
-    print(findall_entities(tagged))
+    # tagged = StanfordParseAPI.tags(sent)
+    # print(f"{tagged}\n")
+    # print(findall_entities(tagged))

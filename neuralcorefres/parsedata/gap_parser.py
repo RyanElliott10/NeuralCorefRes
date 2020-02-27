@@ -48,7 +48,10 @@ _FILE_TYPES = {
 }
 
 
-def get_GAP_data(data_type: GAPDataType, basepath: str = _BASE_FILEPATH, class_type: GAPCoreferenceDatapoint = GAPCoreferenceDatapoint) -> List[GAPCoreferenceDatapoint]:
-    full_filepath = basepath + _FILE_TYPES[data_type]
-    df = pd.read_csv(full_filepath, sep="\t").drop(["URL"], axis=1)
-    return [class_type(*row[1]) for row in df.iterrows()]
+def get_GAP_data(data_type: List[GAPDataType], basepath: str = _BASE_FILEPATH, class_type: GAPCoreferenceDatapoint = GAPCoreferenceDatapoint) -> List[GAPCoreferenceDatapoint]:
+    ret_lst = []
+    for datat in data_type:
+        full_filepath = basepath + _FILE_TYPES[datat]
+        df = pd.read_csv(full_filepath, sep="\t").drop(["URL"], axis=1)
+        ret_lst = ret_lst + [class_type(*row[1]) for row in df.iterrows()]
+    return ret_lst
