@@ -35,7 +35,6 @@ def keras_impl(sents: List[Sentence]):
     labels = to_categorical(np.asarray(labels))
     print('Shape of data tensor:', data.shape)
     print(data)
-    # print('Shape of label tensor:', labels.shape)
 
 
 def tokenize_text(sents: List[Sentence]) -> List[List[str]]:

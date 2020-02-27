@@ -53,7 +53,6 @@ class GenderClassifier:
     def get_gender(self, word: str) -> str:
         if word in HARD_GENDERED_WORDS:
             return HARD_GENDERED_WORDS[word]
-        # self._classifier.prob_classify
         return self._classifier.prob_classify(GenderClassifier.gender_features(word))
 
     def get_genders(self, sent: str) -> List[Tuple[Tuple[str, str], str]]:
