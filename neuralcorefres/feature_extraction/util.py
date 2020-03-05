@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+# General utils
+#
+# Author: Ryan Elliott <ryan.elliott31@gmail.com>
+#
+# For license information, see LICENSE
+
 import re
 from typing import List, Tuple
 

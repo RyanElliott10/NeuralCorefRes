@@ -7,8 +7,20 @@
 
 from enum import Enum
 from typing import List
+import re
 
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
 import pandas as pd
+
+
+REMOVED_STOPWORDS = set(['my', 'he', 'you\'ll', 'her', 'i', 'hers', 'who', 'your',
+                         'himself', 'yourself', 'own', 'you\'re', 'you\'d', 'we',
+                         'myself', 'yourselves', 'yours', 'ours', 'she', 'she\'s',
+                         'his', 'you\'ve', 'me', 'they', 'him', 'whom', 'them',
+                         'their', 'theirs', 'herself', 'themselves', 'you',
+                         'ourselves', 'itself', 'our', 'this', 'that', 'those'])
+STOPWORDS = set.difference(set(stopwords.words('english')), REMOVED_STOPWORDS)
 
 
 """
@@ -26,20 +38,6 @@ class GAPDataType(Enum):
     VALIDATION = 2
 
 
-class GAPCoreferenceDatapoint:
-    def __init__(self, identifier: str, text: str, pronoun: str, pronoun_offset: int, a: str, a_offset: int, a_coref: bool, b: str, b_offset: int, b_coref: bool):
-        self._id = identifier
-        self._text = text
-        self._pronoun = pronoun
-        self._pronoun_offset = pronoun_offset
-        self._a = a
-        self._a_offset = a_offset
-        self._a_coref = a_coref
-        self._b = b
-        self._b_offset = b_offset
-        self._b_coref = b_coref
-
-
 _BASE_FILEPATH = "../data/google_gap-coreference/"
 _FILE_TYPES = {
     GAPDataType.TRAIN: "gap-development.tsv",
@@ -48,7 +46,27 @@ _FILE_TYPES = {
 }
 
 
-def get_GAP_data(data_type: List[GAPDataType], basepath: str = _BASE_FILEPATH, class_type: GAPCoreferenceDatapoint = GAPCoreferenceDatapoint) -> List[GAPCoreferenceDatapoint]:
+class GAPCoreferenceDatapoint:
+    def __init__(self, identifier: str, text: str, pronoun: str, pronoun_offset: int, a: str, a_offset: int, a_coref: bool, b: str, b_offset: int, b_coref: bool):
+        self._id = identifier
+        self.text = text
+        self._pronoun = pronoun
+        self._pronoun_offset = pronoun_offset
+        self._a = a
+        self._a_offset = a_offset
+        self._a_coref = a_coref
+        self._b = b
+        self._b_offset = b_offset
+        self._b_coref = b_coref
+        self.input_ready_alpha()
+
+    def input_ready_alpha(self):
+        """ Removes all non-letter from raw texts, tokenizes, and removes modified stopwords. """
+        self.alphanumeric_text = [w for w in word_tokenize(re.sub(
+            r'[^A-Za-z ]+', '', self.text, flags=re.UNICODE)) if w not in STOPWORDS]
+
+
+def get_gap_data(data_type: List[GAPDataType], basepath: str = _BASE_FILEPATH, class_type: GAPCoreferenceDatapoint = GAPCoreferenceDatapoint) -> List[GAPCoreferenceDatapoint]:
     ret_lst = []
     for datat in data_type:
         full_filepath = basepath + _FILE_TYPES[datat]
