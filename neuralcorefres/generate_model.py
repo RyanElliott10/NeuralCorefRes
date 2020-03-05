@@ -53,7 +53,7 @@ def gender_demo(sent: str):
     print(classifier.get_gender('marine'))
 
 
-def yeet():
+def write_deps():
     sents: List[GAPParse.GAPCoreferenceDatapoint] = GAPParse.get_gap_data(
         GAPParse.GAPDataType.TRAIN, class_type=Sentence)
 
@@ -67,6 +67,7 @@ def yeet():
 
 
 def word_embeddings():
+    """ Deprecated. Use the PreCo dataset. """
     sents = GAPParse.get_gap_data(
         [GAPParse.GAPDataType.TRAIN, GAPParse.GAPDataType.VALIDATION], class_type=Sentence)
     model = WordEmbedding(
@@ -85,11 +86,21 @@ def word_embeddings():
     nid = set(nid)
 
 
-def model_data():
-    sents = PreCoParser.get_preco_data(PreCoParser.PreCoDataType.TRAIN)
+def word_embeddings_demo():
+    """ Demo of word embeddings using a pre-trained model on PreCo data. """
     embedding_model = WordEmbedding(model_path=".././data/models/word_embeddings/preco-vectors.model")
-    print(embedding_model.embedding_model.most_similar(positive=['banana', 'apple', 'pineapple', 'lemon']))
+    print(embedding_model.embedding_model.most_similar(positive=['california', 'sand']))
+
+def preco_parser_demo(data):
+    data = PreCoParser.prep_for_nn(data)
+
+    print("\n\n")
+    for key, value in data.items():
+        print("KEY:", key)
+        [print(f"\t{c.__str__()}") for c in value]
 
 
 if __name__ == "__main__":
-    model_data()
+    data = PreCoParser.get_preco_data(PreCoParser.PreCoDataType.TRAIN)
+    word_embeddings_demo()
+    preco_parser_demo(data)

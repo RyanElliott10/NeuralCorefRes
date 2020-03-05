@@ -1,12 +1,14 @@
-from collections import namedtuple
+from collections import defaultdict, namedtuple
 from enum import Enum
-from typing import List, Tuple
+from typing import DefaultDict, List, Tuple
 
 import pandas as pd
 from progress.bar import IncrementalBar
 
 Cluster = List[str]
 ClusterIndicies = namedtuple('ClusterIndicies', 'sent_idx begin_idx end_idx')
+ClusteredSentence = namedtuple('ClusteredSentence', 'sentence clusters')
+ClusteredDictKey = namedtuple('ClusteredDictKey', ['id', 'sentence_index'])
 
 
 class PreCoDataType(Enum):
@@ -59,6 +61,11 @@ class PreCoCoreferenceDatapoint:
                      for sent_idx, begin_idx, end_idx in cluster][0] for cluster in entity_clusters]
         return clusters
 
+    def __str__(self):
+        sub_strs = '\t' + '\n\t'.join([cluster.__str__()
+                                       for cluster in self.entity_clusters])
+        return f"{self.id}\n{sub_strs}"
+
 
 _BASE_FILEPATH = "../data/PreCo_1.0/"
 _FILE_TYPES = {
@@ -82,8 +89,38 @@ def get_preco_data(data_type: PreCoDataType, basepath: str = _BASE_FILEPATH, cla
     return ret_lst
 
 
+def prep_for_nn(preco_data: List[PreCoCoreferenceDatapoint]) -> DefaultDict[str, List[EntityCluster]]:
+    """
+    Returns a dictionary with key: ClusteredDictKey(example_id, sent_idx) and value:
+    list of entity clusters for the given sentence with the example.
+
+    Example using __str__ on EntityCluster for visualization purposes:
+    {
+        dev_00001_0: [
+            ['anything', 'else', 'you', 'need'] | ClusterIndicies(sent_idx=0, begin_idx=3, end_idx=7),
+        ],
+        dev_00001_1:  [
+            ['three', 'twenty', 'dollar', 'bills'] | ClusterIndicies(sent_idx=1, begin_idx=7, end_idx=11)
+            ['twenty', 'dollar'] | ClusterIndicies(sent_idx=1, begin_idx=8, end_idx=10)
+            ['my', 'hand'] | ClusterIndicies(sent_idx=1, begin_idx=12, end_idx=14)
+        ]
+    }
+    """
+    organized_data = defaultdict(list)
+    for dp in preco_data:
+        [organized_data[ClusteredDictKey(dp.id, cluster.indices.sent_idx)].append(
+            cluster) for cluster in dp.entity_clusters]
+    return organized_data
+
+
 def main():
-    get_preco_data(PreCoDataType.TRAIN)
+    data = [get_preco_data(PreCoDataType.TEST)[0]]
+    data = prep_for_nn(data)
+
+    print("\n\n")
+    for key, value in data.items():
+        print("KEY:", key)
+        [print(f"\t{c.__str__()}") for c in value]
 
 
 if __name__ == "__main__":
