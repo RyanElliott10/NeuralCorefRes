@@ -71,16 +71,10 @@ class WordEmbedding:
         tokenizer = Tokenizer()
         tokenizer.fit_ontexts(texts)
         sequences = tokenizer.texts_to_sequences(texts)
-
-        print(sequences)
-
         data = pad_sequences(sequences)
 
         word_index = tokenizer.word_index
-        print('Found %s unique tokens.' % len(word_index))
         labels = to_categorical(np.asarray(labels))
-        print('Shape of data tensor:', data.shape)
-        print(data)
 
     def _estimate_embedding(self, surrounding_words: List[str], unknown: str) -> List[float]:
         """
