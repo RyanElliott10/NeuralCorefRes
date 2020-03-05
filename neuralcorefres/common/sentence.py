@@ -25,8 +25,8 @@ class Sentence(GAPCoreferenceDatapoint):
         """
         from neuralcorefres.feature_extraction.stanford_parse_api import StanfordParseAPI
 
-        self._dep_parse = StanfordParseAPI.dependency_parse(self._text)
-        self._const_parse = StanfordParseAPI.constituency_parse(self._text)
+        self._dep_parse = StanfordParseAPI.dependency_parse(self.text)
+        self._const_parse = StanfordParseAPI.constituency_parse(self.text)
 
     def extract_features(self):
         """

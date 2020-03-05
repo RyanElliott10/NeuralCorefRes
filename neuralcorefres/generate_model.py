@@ -15,26 +15,24 @@ import nltk
 from nltk.corpus import stopwords
 from progress.bar import IncrementalBar
 
-sys.path.append(os.path.abspath(f"{os.path.dirname(os.path.abspath(__file__))}/../"))
-import neuralcorefres.parsedata.gap_parser as GAPParse
-from neuralcorefres.common import Sentence
-from neuralcorefres.feature_extraction.gender_classifier import (
-    GENDERED_NOUN_PREFIXES, GenderClassifier)
-from neuralcorefres.feature_extraction.stanford_parse_api import \
-    StanfordParseAPI
+sys.path.append(os.path.abspath(
+    f"{os.path.dirname(os.path.abspath(__file__))}/../"))
+from neuralcorefres.util.word_embedding import *
+from neuralcorefres.util.preprocess import single_output
+from neuralcorefres.feature_extraction.util import findall_entities, spacy_entities
 from neuralcorefres.util.data_storage import (write_constituency_file,
                                               write_dependency_file)
-from neuralcorefres.feature_extraction.util import findall_entities, spacy_entities
-from neuralcorefres.util.wordembbeding import *
+from neuralcorefres.feature_extraction.stanford_parse_api import \
+    StanfordParseAPI
+from neuralcorefres.feature_extraction.gender_classifier import (
+    GENDERED_NOUN_PREFIXES, GenderClassifier)
+from neuralcorefres.common import Sentence
+import neuralcorefres.parsedata.gap_parser as GAPParse
+import neuralcorefres.parsedata.preco_parser as PreCoParser
 
 
 pretty_printer = pprint.PrettyPrinter()
 
-
-"""
-TODO: Parse the data and store the features of each sentence in tsv files to
-avoid absurd parsing (and therefore training) times.
-"""
 
 REMOVED_STOPWORDS = set(['my', 'he', 'you\'ll', 'her', 'i', 'hers', 'who', 'your',
                          'himself', 'yourself', 'own', 'you\'re', 'you\'d', 'we',
@@ -56,7 +54,7 @@ def gender_demo(sent: str):
 
 
 def yeet():
-    sents: List[GAPParse.GAPCoreferenceDatapoint] = GAPParse.get_GAP_data(
+    sents: List[GAPParse.GAPCoreferenceDatapoint] = GAPParse.get_gap_data(
         GAPParse.GAPDataType.TRAIN, class_type=Sentence)
 
     bar = IncrementalBar('Parsing Sentences...', max=len(sents))
@@ -66,21 +64,32 @@ def yeet():
 
     write_dependency_file([sent._dep_parse for sent in sents], identifiers=[
                           sent._id for sent in sents])
-    
+
+
 def word_embeddings():
-    sents: List[GAPParse.GAPCoreferenceDatapoint] = GAPParse.get_GAP_data(
+    sents = GAPParse.get_gap_data(
         [GAPParse.GAPDataType.TRAIN, GAPParse.GAPDataType.VALIDATION], class_type=Sentence)
-    # embedding_tensor(model_path='.././data/models/word_embeddings/google-vectors.model', sents=sents)
-    embedding_tensor(model_path='.././data/models/word_embeddings/gap-vectors.model', sents=sents)
-    
+    model = WordEmbedding(
+        model_path='.././data/models/word_embeddings/google-vectors.model', sents=sents)
+
+    texts = [sent.alphanumeric_text for sent in sents]
+    nid = []
+    total_tokens = []
+    for text in texts:
+        tokenized = word_tokenize(text)
+        for i, token in enumerate(tokenized):
+            if not model.embedding_model.__contains__(token):
+                embedding = model.estimate_embedding(tokenized[i-5:i+5], token)
+                print(
+                    f'{token}: {model.embedding_model.similar_by_vector(embedding, topn=1)}')
+    nid = set(nid)
+
+
+def model_data():
+    sents = PreCoParser.get_preco_data(PreCoParser.PreCoDataType.TRAIN)
+    embedding_model = WordEmbedding(model_path=".././data/models/word_embeddings/preco-vectors.model")
+    print(embedding_model.embedding_model.most_similar(positive=['banana', 'apple', 'pineapple', 'lemon']))
 
 
 if __name__ == "__main__":
-    word_embeddings()
-    # sent = u"Bobby Tarantino ran to the bench. He then sat down on it."
-    # con = [StanfordParseAPI.constituency_parse(sent)]
-    # dep = [StanfordParseAPI.dependency_parse(sent)] * 5
-
-    # tagged = StanfordParseAPI.tags(sent)
-    # print(f"{tagged}\n")
-    # print(findall_entities(tagged))
+    model_data()
