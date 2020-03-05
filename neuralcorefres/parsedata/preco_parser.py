@@ -63,9 +63,7 @@ class PreCoCoreferenceDatapoint:
 _BASE_FILEPATH = "../data/PreCo_1.0/"
 _FILE_TYPES = {
     PreCoDataType.TRAIN: "train.json",
-    PreCoDataType.TEST: "dev.json",
-
-
+    PreCoDataType.TEST: "dev.json"
 }
 
 
