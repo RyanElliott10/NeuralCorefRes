@@ -19,7 +19,7 @@ class EntityCluster:
         self.entities = entities
         self.indices = ClusterIndicies(*indices)
 
-    def __tostring__(self):
+    def __str__(self):
         return f"{self.entities} | {self.indices}"
 
 
