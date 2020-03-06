@@ -36,7 +36,7 @@ class WordEmbedding:
 
     def _load_model(self, model_path: str, sents: List[Sentence], is_tokenized: bool):
         if model_path is not None and os.path.exists(model_path):
-            # print('Loading model')
+            print('Loading model')
             model = KeyedVectors.load(model_path)
             word_vectors = model
         elif sents is None:
@@ -96,7 +96,7 @@ class WordEmbedding:
 
     def _get_embedding(self, token: str, tokenized: List[str], index: int) -> Tensor:
         if self.embedding_model.__contains__(token):
-            return self.embedding_model[token]
+            return np.asarray(self.embedding_model[token])
         # FIXME this takes a long time. Can be optimized by storing array of indices that need to be fixed and fixing at end using current embeddings
         return self._estimate_embedding(tokenized[index-3:index+3], token)
 
@@ -114,4 +114,4 @@ class WordEmbedding:
                 embeddings.append(embedding)
             if verbose:
                 bar.next()
-        return embeddings
+        return np.asarray(embeddings)

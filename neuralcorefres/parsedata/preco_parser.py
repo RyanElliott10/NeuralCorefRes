@@ -154,10 +154,9 @@ class PreCoParser:
             #     cluster.entity) for cluster in value]))
             # xtrain.append(sentence_embeddings + cluster_embeddings)
             xtrain.append(sentence_embeddings)
-            ytrain.append(cluster_indices)
+            ytrain.append(np.asarray(cluster_indices))
             bar.next()
 
-        print(np.asarray(xtrain))
         return (np.asarray(xtrain), np.asarray(ytrain))
 
 
