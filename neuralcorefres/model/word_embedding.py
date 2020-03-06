@@ -19,7 +19,9 @@ from nltk.tokenize import word_tokenize
 from progress.bar import IncrementalBar
 
 from neuralcorefres.common.sentence import Sentence
-from neuralcorefres.parsedata.preco_parser import PreCoCoreferenceDatapoint
+
+# TODO Once I have a working architecture, train on the Wikipedia dump from
+# https://code.google.com/archive/p/word2vec/ using the Cal Poly servers.
 
 Tensor = List[float]
 
@@ -57,12 +59,6 @@ class WordEmbedding:
 
         return word_vectors
 
-    @staticmethod
-    def flatten_tokenized(sents: List[PreCoCoreferenceDatapoint]):
-        """ Flattens tokenized lists of PreCo datapoints. """
-        all_sents = [sent.sentences for sent in sents]
-        return [tokens for sentences in all_sents for tokens in sentences]
-
     def save_current_model(self, filepath: str):
         self.embedding_model.save(filepath)
 
@@ -92,33 +88,30 @@ class WordEmbedding:
                 else:
                     summations = np.add(summations, arr)
         if summations is not None:
-            return self.embedding_model.similar_by_vector(summations, topn=1)
+            return summations / valid_num
         return None
 
     def tokenizetext(self, sents: List[Sentence]) -> List[List[str]]:
         return [word_tokenize(sent.alphanumeric_text) for sent in sents]
 
-    def _get_embedding(self, tokenized: str):
-        """ FIXME this takes a long time to run. """
-        embeddings = []
-        for i, token in enumerate(tokenized):
-            if not self.embedding_model.__contains__(token):
-                # FIXME this takes a long time. Can be optimized by storing array of indices that need to be fixed and fixing at end using current embeddings
-                embedding = self._estimate_embedding(tokenized[i-3:i+3], token)
-                if embedding is not None:
-                    embeddings.append(embedding)
-            else:
-                embeddings.append(self.embedding_model[token])
-        print(embeddings)
-        return embeddings
+    def _get_embedding(self, token: str, tokenized: List[str], index: int) -> Tensor:
+        if self.embedding_model.__contains__(token):
+            return np.asarray(self.embedding_model[token])
+        # FIXME this takes a long time. Can be optimized by storing array of indices that need to be fixed and fixing at end using current embeddings
+        return self._estimate_embedding(tokenized[index-3:index+3], token)
 
-    def get_embeddings(self, sents: List[Sentence]) -> List[Tensor]:
+    def get_embeddings(self, tokenized: List[str], verbose: bool = False) -> List[Tensor]:
         """
         Gets embeddings for the input sentences. Supports GapCoreferenceDatapoint
         """
         embeddings = []
-        bar = IncrementalBar('Generating word embeddings...', max=len(sents))
-        for i, sent in enumerate(sents):
-            embeddings.append(self._get_embedding(sent.alphanumeric_text))
-            bar.next()
-        return embeddings
+        if verbose:
+            bar = IncrementalBar(
+                'Generating word embeddings...', max=len(tokenized))
+        for i, token in enumerate(tokenized):
+            embedding = self._get_embedding(token, tokenized, i)
+            if embedding is not None:
+                embeddings.append(embedding)
+            if verbose:
+                bar.next()
+        return np.asarray(embeddings)

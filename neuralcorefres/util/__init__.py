@@ -1,5 +1,4 @@
 from neuralcorefres.util.data_storage import *
-from neuralcorefres.util.word_embedding import *
 from neuralcorefres.util.preprocess import *
 
 __all__ = [
