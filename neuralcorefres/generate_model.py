@@ -28,7 +28,7 @@ from neuralcorefres.feature_extraction.gender_classifier import (
     GENDERED_NOUN_PREFIXES, GenderClassifier)
 from neuralcorefres.common import Sentence
 import neuralcorefres.parsedata.gap_parser as GAPParse
-# from neuralcorefres.parsedata.preco_parser import PreCoParser
+from neuralcorefres.parsedata.preco_parser import PreCoParser, PreCoDataType
 
 
 pretty_printer = pprint.PrettyPrinter()
@@ -98,7 +98,7 @@ def preco_parser_demo(data):
     embedding_model = WordEmbedding(
         model_path=".././data/models/word_embeddings/preco-vectors.model")
     data = PreCoParser.prep_for_nn(data)
-    xtrain, ytrain = PreCoParser.get_train_data(data)
+    xtrain, ytrain = PreCoParser.get_train_data(data, embedding_model)
 
     print(xtrain, ytrain)
 

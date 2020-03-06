@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 from progress.bar import IncrementalBar
 
-from neuralcorefres.model.word_embedding import WordEmbedding
+# from neuralcorefres.model.word_embedding import WordEmbedding
 
 Cluster = List[str]
 Tensor = List[float]
@@ -135,10 +135,7 @@ class PreCoParser:
         return organized_data
 
     @staticmethod
-    def get_train_data(data: List[PreCoCoreferenceDatapoint]) -> Tuple[List[Tensor], List[Tensor]]:
-        embedding_model = WordEmbedding(
-            model_path=".././data/models/word_embeddings/preco-vectors.model")
-
+    def get_train_data(data: List[PreCoCoreferenceDatapoint], embedding_model) -> Tuple[List[Tensor], List[Tensor]]:
         xtrain = []
         ytrain = []
         bar = IncrementalBar(
@@ -162,19 +159,6 @@ class PreCoParser:
 
         print(np.asarray(xtrain))
         return (np.asarray(xtrain), np.asarray(ytrain))
-
-    @staticmethod
-    def check_data(data):
-        """ Checks data for any ill-formatted datapoints. """
-        pool = Pool(os.cpu_count()-1)
-        pool.map(PreCoParser._check_data, data)
-
-    @staticmethod
-    def _check_data(data):
-        embedding_model = WordEmbedding(
-            model_path=".././data/models/word_embeddings/preco-vectors.model")
-        [embedding_model.embedding_model.most_similar(
-            positive=[d], topn=1) for d in data]
 
 
 def main():
