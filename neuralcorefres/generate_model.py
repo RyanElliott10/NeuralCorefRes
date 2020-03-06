@@ -17,7 +17,7 @@ from progress.bar import IncrementalBar
 
 sys.path.append(os.path.abspath(
     f"{os.path.dirname(os.path.abspath(__file__))}/../"))
-from neuralcorefres.util.word_embedding import *
+from neuralcorefres.model.word_embedding import *
 from neuralcorefres.util.preprocess import single_output
 from neuralcorefres.feature_extraction.util import findall_entities, spacy_entities
 from neuralcorefres.util.data_storage import (write_constituency_file,
@@ -28,7 +28,7 @@ from neuralcorefres.feature_extraction.gender_classifier import (
     GENDERED_NOUN_PREFIXES, GenderClassifier)
 from neuralcorefres.common import Sentence
 import neuralcorefres.parsedata.gap_parser as GAPParse
-import neuralcorefres.parsedata.preco_parser as PreCoParser
+from neuralcorefres.parsedata.preco_parser import *
 
 
 pretty_printer = pprint.PrettyPrinter()
@@ -88,19 +88,23 @@ def word_embeddings():
 
 def word_embeddings_demo():
     """ Demo of word embeddings using a pre-trained model on PreCo data. """
-    embedding_model = WordEmbedding(model_path=".././data/models/word_embeddings/preco-vectors.model")
-    print(embedding_model.embedding_model.most_similar(positive=['california', 'sand']))
+    embedding_model = WordEmbedding(
+        model_path=".././data/models/word_embeddings/preco-vectors.model")
+    print(embedding_model.embedding_model.most_similar(
+        positive=['water', 'sand']))
+
 
 def preco_parser_demo(data):
+    embedding_model = WordEmbedding(
+        model_path=".././data/models/word_embeddings/preco-vectors.model")
     data = PreCoParser.prep_for_nn(data)
+    xtrain, ytrain = PreCoParser.get_train_data(data)
 
-    print("\n\n")
-    for key, value in data.items():
-        print("KEY:", key)
-        [print(f"\t{c.__str__()}") for c in value]
+    print(xtrain, ytrain)
 
 
 if __name__ == "__main__":
-    data = PreCoParser.get_preco_data(PreCoParser.PreCoDataType.TRAIN)
-    word_embeddings_demo()
+
+    data = PreCoParser.get_preco_data(PreCoDataType.TEST)
+    # word_embeddings_demo()
     preco_parser_demo(data)
