@@ -20,7 +20,6 @@ from progress.bar import IncrementalBar
 
 from neuralcorefres.common.sentence import Sentence
 
-
 # TODO Once I have a working architecture, train on the Wikipedia dump from
 # https://code.google.com/archive/p/word2vec/ using the Cal Poly servers.
 

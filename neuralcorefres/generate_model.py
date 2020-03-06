@@ -17,7 +17,7 @@ from progress.bar import IncrementalBar
 
 sys.path.append(os.path.abspath(
     f"{os.path.dirname(os.path.abspath(__file__))}/../"))
-from neuralcorefres.model.word_embedding import *
+from neuralcorefres.model.word_embedding import WordEmbedding
 from neuralcorefres.util.preprocess import single_output
 from neuralcorefres.feature_extraction.util import findall_entities, spacy_entities
 from neuralcorefres.util.data_storage import (write_constituency_file,
@@ -28,7 +28,7 @@ from neuralcorefres.feature_extraction.gender_classifier import (
     GENDERED_NOUN_PREFIXES, GenderClassifier)
 from neuralcorefres.common import Sentence
 import neuralcorefres.parsedata.gap_parser as GAPParse
-from neuralcorefres.parsedata.preco_parser import *
+# from neuralcorefres.parsedata.preco_parser import PreCoParser
 
 
 pretty_printer = pprint.PrettyPrinter()
@@ -104,7 +104,6 @@ def preco_parser_demo(data):
 
 
 if __name__ == "__main__":
-
     data = PreCoParser.get_preco_data(PreCoDataType.TEST)
     # word_embeddings_demo()
     preco_parser_demo(data)

@@ -8,12 +8,12 @@
 from collections import defaultdict, namedtuple
 from enum import Enum
 from itertools import chain
+from multiprocessing import Pool
 from typing import DefaultDict, List, Tuple
 
+import numpy as np
 import pandas as pd
 from progress.bar import IncrementalBar
-
-from multiprocessing import Pool
 
 from neuralcorefres.model.word_embedding import WordEmbedding
 
