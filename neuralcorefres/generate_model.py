@@ -5,23 +5,12 @@
 #
 # For license information, see LICENSE
 
-from neuralcorefres.parsedata.preco_parser import PreCoParser, PreCoDataType
-import neuralcorefres.parsedata.gap_parser as GAPParse
-from neuralcorefres.common import Sentence
-from neuralcorefres.feature_extraction.gender_classifier import (
-    GENDERED_NOUN_PREFIXES, GenderClassifier)
-from neuralcorefres.feature_extraction.stanford_parse_api import \
-    StanfordParseAPI
-from neuralcorefres.util.data_storage import (write_constituency_file,
-                                              write_dependency_file)
-from neuralcorefres.feature_extraction.util import findall_entities, spacy_entities
-from neuralcorefres.util.preprocess import single_output
-from neuralcorefres.model.word_embedding import WordEmbedding
 import os
 import pprint
 import sys
 import re
 from typing import List
+import gc
 
 import nltk
 from nltk.corpus import stopwords
@@ -29,6 +18,19 @@ from progress.bar import IncrementalBar
 
 sys.path.append(os.path.abspath(
     f"{os.path.dirname(os.path.abspath(__file__))}/../"))
+from neuralcorefres.model.cluster_network import ClusterNetwork
+from neuralcorefres.model.word_embedding import WordEmbedding
+from neuralcorefres.util.preprocess import single_output
+from neuralcorefres.feature_extraction.util import findall_entities, spacy_entities
+from neuralcorefres.util.data_storage import (write_constituency_file,
+                                              write_dependency_file)
+from neuralcorefres.feature_extraction.stanford_parse_api import \
+    StanfordParseAPI
+from neuralcorefres.feature_extraction.gender_classifier import (
+    GENDERED_NOUN_PREFIXES, GenderClassifier)
+from neuralcorefres.common import Sentence
+import neuralcorefres.parsedata.gap_parser as GAPParse
+from neuralcorefres.parsedata.preco_parser import PreCoParser, PreCoDataType
 
 
 pretty_printer = pprint.PrettyPrinter()
@@ -100,9 +102,11 @@ def preco_parser_demo(data):
     data = PreCoParser.prep_for_nn(data)
     xtrain, ytrain = PreCoParser.get_train_data(data, embedding_model)
 
-    print(xtrain, ytrain)
+    gc.collect()
+    cluster_network = ClusterNetwork(xtrain, ytrain, [], [], inputmaxlen=125)
+    cluster_network.train()
 
 
 if __name__ == "__main__":
-    data = PreCoParser.get_preco_data(PreCoDataType.TEST)
+    data = PreCoParser.get_preco_data(PreCoDataType.TRAIN)
     preco_parser_demo(data)

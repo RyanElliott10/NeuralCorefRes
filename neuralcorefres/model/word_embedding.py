@@ -5,6 +5,7 @@
 #
 # For license information, see LICENSE
 
+import gc
 import os
 import time
 from typing import List, Sequence
@@ -36,17 +37,17 @@ class WordEmbedding:
 
     def _load_model(self, model_path: str, sents: List[Sentence], is_tokenized: bool):
         if model_path is not None and os.path.exists(model_path):
-            print('Loading model')
+            print('\nLoading model')
             model = KeyedVectors.load(model_path)
             word_vectors = model
         elif sents is None:
-            print('Loading Google News word vectors...')
+            print('\nLoading Google News word vectors...')
             model = KeyedVectors.load_word2vec_format(
                 '.././data/GoogleNews-vectors-negative300.bin.gz', binary=True)
             model.wv.save(model_path)
             word_vectors = model
         else:
-            print('Training model on new data...')
+            print('\nTraining model on new data...')
             if is_tokenized:
                 model = Word2Vec(
                     sentences=sents, size=EMBEDDING_DIM, workers=5)
@@ -114,4 +115,5 @@ class WordEmbedding:
                 embeddings.append(embedding)
             if verbose:
                 bar.next()
+
         return np.asarray(embeddings)

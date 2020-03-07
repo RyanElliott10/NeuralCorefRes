@@ -5,6 +5,7 @@
 #
 # For license information, see LICENSE
 
+import gc
 from collections import defaultdict, namedtuple
 from enum import Enum
 from itertools import chain
@@ -102,6 +103,8 @@ class PreCoParser:
             ret_lst.append(PreCoCoreferenceDatapoint(
                 el['id'], el['sentences'], entity_clusters))
             bar.next()
+        
+        gc.collect()
         return ret_lst
 
     @staticmethod
@@ -157,6 +160,7 @@ class PreCoParser:
             ytrain.append(np.asarray(cluster_indices))
             bar.next()
 
+        gc.collect()
         return (np.asarray(xtrain), np.asarray(ytrain))
 
 

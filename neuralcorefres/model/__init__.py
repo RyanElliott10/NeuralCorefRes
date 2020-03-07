@@ -1,7 +1,7 @@
+from neuralcorefres.model.cluster_network import *
 from neuralcorefres.model.word_embedding import *
-from neuralcorefres.model.network import *
 
 __all__ = [
+    "ClusterNetwork",
     "WordEmbedding"
-    "Model"
 ]
