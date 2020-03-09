@@ -14,9 +14,10 @@ from typing import DefaultDict, List, Tuple
 
 import numpy as np
 import pandas as pd
+from keras.utils import to_categorical
+from nltk import pos_tag
+from nltk.data import load
 from progress.bar import IncrementalBar
-
-# from neuralcorefres.model.word_embedding import WordEmbedding
 
 Cluster = List[str]
 Tensor = List[float]
@@ -91,6 +92,10 @@ _FILE_TYPES = {
 
 class PreCoParser:
     @staticmethod
+    def get_pos_onehot():
+        return pd.get_dummies(list(load('help/tagsets/upenn_tagset.pickle').keys()))
+
+    @staticmethod
     def get_preco_data(data_type: PreCoDataType, basepath: str = _BASE_FILEPATH, class_type: PreCoCoreferenceDatapoint = PreCoCoreferenceDatapoint) -> List[PreCoCoreferenceDatapoint]:
         ret_lst = []
         full_filepath = basepath + _FILE_TYPES[data_type]
@@ -103,7 +108,7 @@ class PreCoParser:
             ret_lst.append(PreCoCoreferenceDatapoint(
                 el['id'], el['sentences'], entity_clusters))
             bar.next()
-        
+
         gc.collect()
         return ret_lst
 
@@ -138,28 +143,44 @@ class PreCoParser:
         return organized_data
 
     @staticmethod
+    def get_embedding_for_sent(sent: List[str], embedding_model) -> List[Tensor]:
+        """ Get embeddings as array of embeddings. """
+        return embedding_model.get_embeddings(sent)
+
+    @staticmethod
+    def get_pos_onehot_for_sent(sent: List[str], pos_onehot) -> List[Tensor]:
+        """ Get POS as array of one-hot arrays. In same order as words from sentence (if used correctly). """
+        return np.asarray([pos_onehot[p].to_numpy() for p in list(zip(*pos_tag(sent)))[1]])
+
+    @staticmethod
     def get_train_data(data: List[PreCoCoreferenceDatapoint], embedding_model) -> Tuple[List[Tensor], List[Tensor]]:
         xtrain = []
         ytrain = []
+        pos_onehot = PreCoParser.get_pos_onehot()
+
         bar = IncrementalBar(
             'Parsing data into xtrain, ytrain', max=len(data))
         for key, value in data.items():
-            sentence_embeddings = embedding_model.get_embeddings(key.sentence)
+            training_data = []
+            
+            sentence_embeddings = PreCoParser.get_embedding_for_sent(key.sentence, embedding_model)
+            pos = PreCoParser.get_pos_onehot_for_sent(key.sentence, pos_onehot)
+
+            for i, embedding in enumerate(sentence_embeddings):
+                training_data.append(np.asarray(
+                    [embedding, np.asarray(pos[i])]))
 
             cluster_indices = list(
                 sum([cluster.indices for cluster in value], ()))
             # Delete every third element to remove sentence index
             del cluster_indices[0::3]
 
-            # TODO move this into the second step of the network pipeline
-            # Cluster embeddings shouldn't be a part of the training data when predicting clusters. SHould be used when pushing clusters through coreference NN
-            # cluster_embeddings = list(chain(*[embedding_model.get_embeddings(
-            #     cluster.entity) for cluster in value]))
-            # xtrain.append(sentence_embeddings + cluster_embeddings)
-            xtrain.append(sentence_embeddings)
-            ytrain.append(np.asarray(cluster_indices))
+            xtrain.append(np.asarray(training_data))
+            ytrain.append(np.asarray(cluster_indices) / len(key.sentence))
             bar.next()
 
+        xtrain = np.asarray(xtrain)
+        print(xtrain[0][0][1].shape)
         gc.collect()
         return (np.asarray(xtrain), np.asarray(ytrain))
 

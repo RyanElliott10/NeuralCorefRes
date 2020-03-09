@@ -12,25 +12,27 @@ import re
 from typing import List
 import gc
 
+import numpy as np
 import nltk
 from nltk.corpus import stopwords
 from progress.bar import IncrementalBar
+from nltk.tokenize import word_tokenize
 
 sys.path.append(os.path.abspath(
     f"{os.path.dirname(os.path.abspath(__file__))}/../"))
-from neuralcorefres.model.cluster_network import ClusterNetwork
-from neuralcorefres.model.word_embedding import WordEmbedding
-from neuralcorefres.util.preprocess import single_output
-from neuralcorefres.feature_extraction.util import findall_entities, spacy_entities
-from neuralcorefres.util.data_storage import (write_constituency_file,
-                                              write_dependency_file)
-from neuralcorefres.feature_extraction.stanford_parse_api import \
-    StanfordParseAPI
+from neuralcorefres.parsedata.preco_parser import PreCoParser, PreCoDataType
+import neuralcorefres.parsedata.gap_parser as GAPParse
+from neuralcorefres.common import Sentence
 from neuralcorefres.feature_extraction.gender_classifier import (
     GENDERED_NOUN_PREFIXES, GenderClassifier)
-from neuralcorefres.common import Sentence
-import neuralcorefres.parsedata.gap_parser as GAPParse
-from neuralcorefres.parsedata.preco_parser import PreCoParser, PreCoDataType
+from neuralcorefres.feature_extraction.stanford_parse_api import \
+    StanfordParseAPI
+from neuralcorefres.util.data_storage import (write_constituency_file,
+                                              write_dependency_file)
+from neuralcorefres.feature_extraction.util import findall_entities, spacy_entities
+from neuralcorefres.util.preprocess import single_output
+from neuralcorefres.model.word_embedding import WordEmbedding
+from neuralcorefres.model.cluster_network import ClusterNetwork
 
 
 pretty_printer = pprint.PrettyPrinter()
@@ -101,12 +103,35 @@ def preco_parser_demo(data):
         model_path=".././data/models/word_embeddings/preco-vectors.model")
     data = PreCoParser.prep_for_nn(data)
     xtrain, ytrain = PreCoParser.get_train_data(data, embedding_model)
+    xtest, ytest = PreCoParser.get_train_data(data, embedding_model)
+
+    # print(xtrain[0][0].shape)
+    for el in xtrain:
+        for l in el:
+            print(l[1].shape)
 
     gc.collect()
-    cluster_network = ClusterNetwork(xtrain, ytrain, [], [], inputmaxlen=125)
+    cluster_network = ClusterNetwork(
+        xtrain[:8000], ytrain[:8000], xtest[8000:], ytest[8000:], inputmaxlen=125)
     cluster_network.train()
+
+def train_model():
+    data = PreCoParser.get_preco_data(PreCoDataType.TEST)
+    preco_parser_demo(data)
+
+def predict_from_model():
+    cluster_model = ClusterNetwork()
+    cluster_model.load_saved(".././data/models/clusters/small.h5")
+    embedding_model = WordEmbedding(
+        model_path=".././data/models/word_embeddings/preco-vectors.model")
+
+    # embeddings = embedding_model.get_embeddings(
+    #     word_tokenize('Sean ran to the park and he had fun.'))
+    embeddings = embedding_model.get_embeddings(["``", "Is", "there", "anything", "else", "you", "need", ",", "honey", "?", "''"])
+    print(cluster_model.predict(embeddings) * len(["``", "Is", "there", "anything", "else", "you", "need", ",", "honey", "?", "''"]))
 
 
 if __name__ == "__main__":
-    data = PreCoParser.get_preco_data(PreCoDataType.TRAIN)
-    preco_parser_demo(data)
+    train_model()
+    # predict_from_model()
+
