@@ -139,7 +139,8 @@ class PreCoParser:
         organized_data = defaultdict(list)
         for dp in preco_data:
             [organized_data[ClusteredDictKey(dp.id, cluster.indices.sent_idx, tuple(
-                dp.sents[cluster.indices.sent_idx]))].append(cluster) for cluster in dp.entity_clusters]
+                dp.sents[cluster.indices.sent_idx]))].append(cluster) for cluster in dp.entity_clusters[:1]]
+        
         return organized_data
 
     @staticmethod
@@ -153,7 +154,17 @@ class PreCoParser:
         return np.asarray([pos_onehot[p].to_numpy() for p in list(zip(*pos_tag(sent)))[1]])
 
     @staticmethod
-    def get_train_data(data: List[PreCoCoreferenceDatapoint], embedding_model) -> Tuple[List[Tensor], List[Tensor]]:
+    def get_train_data(data: DefaultDict[ClusteredDictKey, PreCoCoreferenceDatapoint], embedding_model) -> Tuple[List[Tensor], List[Tensor]]:
+        """
+        (n_samples, n_words, n_attributes (word embedding, pos, etc))
+        [ [ [ word_embedding, pos ] ] ]
+    
+        xtrain[sentence_sample][word_position][attribute]
+        xtrain[0][0] -> first word's attributes in first sentence
+        xtrain[37][5] -> sixth word's attributes in 38th sentence
+        xtrain[0][0][0] -> word_embedding
+        xtrain[0][0][1] -> pos one-hot encoding
+        """
         xtrain = []
         ytrain = []
         pos_onehot = PreCoParser.get_pos_onehot()
@@ -162,8 +173,9 @@ class PreCoParser:
             'Parsing data into xtrain, ytrain', max=len(data))
         for key, value in data.items():
             training_data = []
-            
-            sentence_embeddings = PreCoParser.get_embedding_for_sent(key.sentence, embedding_model)
+
+            sentence_embeddings = PreCoParser.get_embedding_for_sent(
+                key.sentence, embedding_model)
             pos = PreCoParser.get_pos_onehot_for_sent(key.sentence, pos_onehot)
 
             for i, embedding in enumerate(sentence_embeddings):
@@ -175,12 +187,11 @@ class PreCoParser:
             # Delete every third element to remove sentence index
             del cluster_indices[0::3]
 
-            xtrain.append(np.asarray(training_data))
-            ytrain.append(np.asarray(cluster_indices) / len(key.sentence))
+            if len(training_data) > 0:
+                xtrain.append(np.asarray(training_data))
+                ytrain.append(np.asarray(cluster_indices) / len(key.sentence))
             bar.next()
 
-        xtrain = np.asarray(xtrain)
-        print(xtrain[0][0][1].shape)
         gc.collect()
         return (np.asarray(xtrain), np.asarray(ytrain))
 

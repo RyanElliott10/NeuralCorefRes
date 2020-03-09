@@ -103,16 +103,14 @@ def preco_parser_demo(data):
         model_path=".././data/models/word_embeddings/preco-vectors.model")
     data = PreCoParser.prep_for_nn(data)
     xtrain, ytrain = PreCoParser.get_train_data(data, embedding_model)
-    xtest, ytest = PreCoParser.get_train_data(data, embedding_model)
 
-    # print(xtrain[0][0].shape)
-    for el in xtrain:
-        for l in el:
-            print(l[1].shape)
+    print()
+    # for el in xtrain:
+    #     print(f"Shapes: words: {el.shape}, attributes: {el[0].shape}, embeddings: {el[0][0].shape}, pos: {el[0][1].shape}")
 
     gc.collect()
     cluster_network = ClusterNetwork(
-        xtrain[:8000], ytrain[:8000], xtest[8000:], ytest[8000:], inputmaxlen=125)
+        xtrain[:8000], ytrain[:8000], xtrain[8000:], ytrain[8000:], inputmaxlen=125)
     cluster_network.train()
 
 def train_model():
