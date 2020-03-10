@@ -4,9 +4,9 @@ from typing import List
 import numpy as np
 import tensorflow as tf
 from keras import Sequential
-from keras.layers import (LSTM, Conv2D, CuDNNLSTM, Dense, Dropout, Flatten, Conv3D, MaxPooling3D,
-                          MaxPooling2D, TimeDistributed)
-from keras.optimizers import Adam
+from keras.layers import (LSTM, Conv2D, Dense, Dropout, Flatten, MaxPooling2D,
+                          TimeDistributed)
+from keras.optimizers import RMSprop
 from keras.preprocessing import sequence
 
 from neuralcorefres.model.word_embedding import EMBEDDING_DIM
@@ -37,20 +37,21 @@ class ClusterNetwork():
         self.model = Sequential()
 
         # CNN
-        self.model.add(Conv2D(32, kernel_size=5, strides=(1), padding='same', input_shape=(self.INPUT_MAXLEN, 2, EMBEDDING_DIM)))
-        # self.model.add(Conv3D(16, kernel_size=(3, 3, 3)))
+        self.model.add(Conv2D(64, kernel_size=(5, 5), padding='same',
+                              activation='tanh', input_shape=(self.INPUT_MAXLEN, 2, EMBEDDING_DIM)))
+        # self.model.add(Conv2D(16, kernel_size=(3, 3)))
         self.model.add(MaxPooling2D(pool_size=2))
         self.model.add(TimeDistributed(Flatten()))
 
         # LSTM
-        self.model.add(LSTM(512, return_sequences=False,
+        self.model.add(LSTM(1028, return_sequences=True,
                             dropout=0.2, activation='tanh'))
-        # self.model.add(LSTM(256, dropout=0.2, activation='tanh'))
+        self.model.add(LSTM(256, dropout=0.2, activation='tanh'))
         self.model.add(Dense(256, activation='relu'))
-        self.model.add(Dense(128, activation='tanh'))
+        self.model.add(Dense(512, activation='relu'))
         self.model.add(Dense(self.OUTPUT_LEN, activation='tanh'))
 
-        opt = Adam(lr=1e-3, decay=1e-6)
+        opt = RMSprop(learning_rate=1e-3)
         self.model.compile(loss='categorical_crossentropy',
                            optimizer=opt, metrics=['accuracy'])
         print(self.model.summary())
