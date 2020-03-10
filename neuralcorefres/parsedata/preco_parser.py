@@ -14,10 +14,13 @@ from typing import DefaultDict, List, Tuple
 
 import numpy as np
 import pandas as pd
+from keras.preprocessing import sequence
 from keras.utils import to_categorical
 from nltk import pos_tag
 from nltk.data import load
 from progress.bar import IncrementalBar
+
+from neuralcorefres.model.word_embedding import EMBEDDING_DIM
 
 Cluster = List[str]
 Tensor = List[float]
@@ -140,7 +143,7 @@ class PreCoParser:
         for dp in preco_data:
             [organized_data[ClusteredDictKey(dp.id, cluster.indices.sent_idx, tuple(
                 dp.sents[cluster.indices.sent_idx]))].append(cluster) for cluster in dp.entity_clusters[:1]]
-        
+
         return organized_data
 
     @staticmethod
@@ -158,42 +161,53 @@ class PreCoParser:
         """
         (n_samples, n_words, n_attributes (word embedding, pos, etc))
         [ [ [ word_embedding, pos ] ] ]
-    
+
         xtrain[sentence_sample][word_position][attribute]
-        xtrain[0][0] -> first word's attributes in first sentence
-        xtrain[37][5] -> sixth word's attributes in 38th sentence
-        xtrain[0][0][0] -> word_embedding
-        xtrain[0][0][1] -> pos one-hot encoding
+        xtrain[37][5] -> sixth word's attributes in 38th sentence (np.ndarray containing two np.ndarrays)
+        xtrain[0][0][0] -> word_embedding (np.ndarray)
+        xtrain[0][0][1] -> pos one-hot encoding (np.ndarray)
         """
-        xtrain = []
+        # xtrain = []
+        # ytrain = []
+        xtrain = np.empty((len(data), 125, 2, EMBEDDING_DIM))
         ytrain = []
         pos_onehot = PreCoParser.get_pos_onehot()
 
         bar = IncrementalBar(
             'Parsing data into xtrain, ytrain', max=len(data))
-        for key, value in data.items():
+        for i, (key, value) in enumerate(data.items()):
             training_data = []
 
             sentence_embeddings = PreCoParser.get_embedding_for_sent(
                 key.sentence, embedding_model)
             pos = PreCoParser.get_pos_onehot_for_sent(key.sentence, pos_onehot)
+            if sentence_embeddings.shape[0] == 0 or sentence_embeddings.shape[0] != len(key.sentence):
+                # Unusable data
+                continue
 
-            for i, embedding in enumerate(sentence_embeddings):
-                training_data.append(np.asarray(
-                    [embedding, np.asarray(pos[i])]))
+            assert sentence_embeddings.shape == (
+                len(key.sentence), EMBEDDING_DIM)
+            assert pos.shape == (len(key.sentence), 45)
+
+            for j, word_embeddings in enumerate(sentence_embeddings):
+                pos_embeddings = sequence.pad_sequences(
+                    [pos[j]], maxlen=EMBEDDING_DIM, dtype='float32', padding='post')[0]
+                xtrain[i][j][0] = word_embeddings
+                xtrain[i][j][1] = pos_embeddings
 
             cluster_indices = list(
                 sum([cluster.indices for cluster in value], ()))
             # Delete every third element to remove sentence index
             del cluster_indices[0::3]
 
-            if len(training_data) > 0:
-                xtrain.append(np.asarray(training_data))
-                ytrain.append(np.asarray(cluster_indices) / len(key.sentence))
+            ytrain.append(np.asarray(cluster_indices) / len(key.sentence))
             bar.next()
 
         gc.collect()
-        return (np.asarray(xtrain), np.asarray(ytrain))
+        print("\nFINAL XTRAIN SHAPE:", xtrain.shape)
+        print("SAMPLE XTRAIN 0:", xtrain[0][0][0])
+        print("SAMPLE XTRAIN 1:", xtrain[0][0][1])
+        return (np.asarray(xtrain, dtype='float32'), np.asarray(ytrain, dtype='float32'))
 
 
 def main():

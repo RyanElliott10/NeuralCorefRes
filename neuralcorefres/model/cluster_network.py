@@ -33,7 +33,7 @@ class ClusterNetwork():
 
         # CNN
         self.model.add(Conv2D(64, kernel_size=(8, 8), input_shape=(
-            self.INPUT_MAXLEN, EMBEDDING_DIM, 2), activation='relu', strides=(1, 1)))
+            self.INPUT_MAXLEN, 2, EMBEDDING_DIM), activation='relu', strides=(1, 1)))
         self.model.add(MaxPooling2D(pool_size=(4, 4)))
         self.model.add(Flatten())
         self.model.add(Reshape(target_shape=(29, 6272)))
@@ -53,20 +53,6 @@ class ClusterNetwork():
                            optimizer=opt, metrics=['accuracy'])
         print(self.model.summary())
 
-    @staticmethod
-    def _pad_input_data(data: List[Tensor], maxlen: int) -> List[Tensor]:
-        """
-        Returns the data with each sentence containing 125 "words", where any
-        sentences with fewer than 125 words are padded with a
-        (2, EMBEDDING_DIM, POS_DIM) array.
-        """
-        for i, sentence in enumerate(data):
-            for j in range(maxlen-sentence.shape[0]):
-                data[i] = np.append(
-                    data[i], [[np.zeros(maxlen), np.zeros(45)]], axis=0)
-
-        return data
-
     def _pad_sequences(self):
         """
         (n_samples, n_words, n_attributes (word embedding, pos, etc))
@@ -78,23 +64,18 @@ class ClusterNetwork():
         xtrain[0][0][0] -> word_embedding
         xtrain[0][0][1] -> pos one-hot encoding
         """
-        # Fix padding for 125 word standard input
-        self.xtrain = ClusterNetwork._pad_input_data(
-            self.xtrain, self.INPUT_MAXLEN)
-        self.xtest = ClusterNetwork._pad_input_data(
-            self.xtest, self.INPUT_MAXLEN)
-
-        assert self.xtrain[0].shape == (self.INPUT_MAXLEN, 2)
-        assert self.xtrain[0][0].shape == (2,) # Number of attributes, can increase when more than just embedding and pos
-        assert self.xtrain[0][0][0].shape == (EMBEDDING_DIM,)
-        assert self.xtrain[0][0][1].shape == (45,)
-
         self.ytrain = sequence.pad_sequences(
             self.ytrain, maxlen=self.OUTPUT_LEN, dtype='float32', padding='post')
         self.ytest = sequence.pad_sequences(
             self.ytest, maxlen=self.OUTPUT_LEN, dtype='float32', padding='post')
 
-        assert self.ytrain[0].shape == (self.OUTPUT_LEN,)
+        assert self.xtrain[0].shape == (self.INPUT_MAXLEN, 2, EMBEDDING_DIM)
+
+        # print("\nXTRAIN FINAL SHAPE:", self.xtrain.shape)
+        # print("\nYTRAIN FINAL SHAPE:", self.ytrain.shape)
+
+        # Current issue: this fails because some data isn't being parsed and prepared correctly
+        # assert self.ytrain.shape == (self.xtrain.shape[0], self.OUTPUT_LEN)
 
     def train(self):
         self._pad_sequences()

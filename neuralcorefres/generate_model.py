@@ -106,7 +106,7 @@ def preco_parser_demo(data):
 
     print()
     # for el in xtrain:
-    #     print(f"Shapes: words: {el.shape}, attributes: {el[0].shape}, embeddings: {el[0][0].shape}, pos: {el[0][1].shape}")
+    #     print(f"Shapes: words: {el.dtype}, attributes: {el[0].dtype}, embeddings: {el[0][0].dtype}, pos: {el[0][1].dtype}")
 
     gc.collect()
     cluster_network = ClusterNetwork(
