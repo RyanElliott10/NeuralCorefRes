@@ -157,7 +157,7 @@ class PreCoParser:
         return np.asarray([pos_onehot[p].to_numpy() for p in list(zip(*pos_tag(sent)))[1]])
 
     @staticmethod
-    def get_train_data(data: DefaultDict[ClusteredDictKey, PreCoCoreferenceDatapoint], embedding_model) -> Tuple[List[Tensor], List[Tensor]]:
+    def get_train_data(data: DefaultDict[ClusteredDictKey, PreCoCoreferenceDatapoint], maxinputlen: int, embedding_model) -> Tuple[List[Tensor], List[Tensor]]:
         """
         (n_samples, n_words, n_attributes (word embedding, pos, etc))
         [ [ [ word_embedding, pos ] ] ]
@@ -167,9 +167,7 @@ class PreCoParser:
         xtrain[0][0][0] -> word_embedding (np.ndarray)
         xtrain[0][0][1] -> pos one-hot encoding (np.ndarray)
         """
-        # xtrain = []
-        # ytrain = []
-        xtrain = np.empty((len(data), 125, 2, EMBEDDING_DIM))
+        xtrain = np.empty((len(data), maxinputlen, 2, EMBEDDING_DIM))
         ytrain = []
         pos_onehot = PreCoParser.get_pos_onehot()
 

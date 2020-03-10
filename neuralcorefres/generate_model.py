@@ -5,34 +5,36 @@
 #
 # For license information, see LICENSE
 
+import gc
 import os
 import pprint
-import sys
 import re
+import sys
 from typing import List
-import gc
 
-import numpy as np
 import nltk
+import numpy as np
 from nltk.corpus import stopwords
-from progress.bar import IncrementalBar
 from nltk.tokenize import word_tokenize
+from progress.bar import IncrementalBar
 
 sys.path.append(os.path.abspath(
     f"{os.path.dirname(os.path.abspath(__file__))}/../"))
-from neuralcorefres.parsedata.preco_parser import PreCoParser, PreCoDataType
 import neuralcorefres.parsedata.gap_parser as GAPParse
 from neuralcorefres.common import Sentence
 from neuralcorefres.feature_extraction.gender_classifier import (
     GENDERED_NOUN_PREFIXES, GenderClassifier)
 from neuralcorefres.feature_extraction.stanford_parse_api import \
     StanfordParseAPI
+from neuralcorefres.feature_extraction.util import (findall_entities,
+                                                    spacy_entities)
+from neuralcorefres.model.cluster_network import ClusterNetwork
+from neuralcorefres.model.word_embedding import WordEmbedding
+from neuralcorefres.parsedata.preco_parser import PreCoDataType, PreCoParser
 from neuralcorefres.util.data_storage import (write_constituency_file,
                                               write_dependency_file)
-from neuralcorefres.feature_extraction.util import findall_entities, spacy_entities
 from neuralcorefres.util.preprocess import single_output
-from neuralcorefres.model.word_embedding import WordEmbedding
-from neuralcorefres.model.cluster_network import ClusterNetwork
+
 
 
 pretty_printer = pprint.PrettyPrinter()
@@ -99,23 +101,24 @@ def word_embeddings_demo():
 
 
 def preco_parser_demo(data):
+    INPUT_MAXLEN = 125
     embedding_model = WordEmbedding(
         model_path=".././data/models/word_embeddings/preco-vectors.model")
     data = PreCoParser.prep_for_nn(data)
-    xtrain, ytrain = PreCoParser.get_train_data(data, embedding_model)
+    xtrain, ytrain = PreCoParser.get_train_data(data, maxinputlen=INPUT_MAXLEN, embedding_model)
 
     print()
-    # for el in xtrain:
-    #     print(f"Shapes: words: {el.dtype}, attributes: {el[0].dtype}, embeddings: {el[0][0].dtype}, pos: {el[0][1].dtype}")
 
     gc.collect()
     cluster_network = ClusterNetwork(
-        xtrain[:8000], ytrain[:8000], xtrain[8000:], ytrain[8000:], inputmaxlen=125)
+        xtrain[:8000], ytrain[:8000], xtrain[8000:], ytrain[8000:], inputmaxlen=INPUT_MAXLEN)
     cluster_network.train()
+
 
 def train_model():
     data = PreCoParser.get_preco_data(PreCoDataType.TEST)
     preco_parser_demo(data)
+
 
 def predict_from_model():
     cluster_model = ClusterNetwork()
@@ -123,13 +126,12 @@ def predict_from_model():
     embedding_model = WordEmbedding(
         model_path=".././data/models/word_embeddings/preco-vectors.model")
 
-    # embeddings = embedding_model.get_embeddings(
-    #     word_tokenize('Sean ran to the park and he had fun.'))
-    embeddings = embedding_model.get_embeddings(["``", "Is", "there", "anything", "else", "you", "need", ",", "honey", "?", "''"])
-    print(cluster_model.predict(embeddings) * len(["``", "Is", "there", "anything", "else", "you", "need", ",", "honey", "?", "''"]))
+    embeddings = embedding_model.get_embeddings(
+        ["``", "Is", "there", "anything", "else", "you", "need", ",", "honey", "?", "''"])
+    print(cluster_model.predict(embeddings) *
+          len(["``", "Is", "there", "anything", "else", "you", "need", ",", "honey", "?", "''"]))
 
 
 if __name__ == "__main__":
     train_model()
     # predict_from_model()
-
