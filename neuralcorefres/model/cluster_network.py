@@ -6,7 +6,7 @@ import tensorflow as tf
 from keras import Sequential
 from keras.layers import (LSTM, Conv2D, Dense, Dropout, Flatten, MaxPooling2D,
                           TimeDistributed)
-from keras.optimizers import RMSprop
+from keras.optimizers import RMSprop, SGD
 from keras.preprocessing import sequence
 
 from neuralcorefres.model.word_embedding import EMBEDDING_DIM
@@ -25,8 +25,10 @@ class ClusterNetwork():
         self.INPUT_MAXLEN = inputmaxlen
         self.OUTPUT_LEN = outputlen
 
-        assert self.xtrain[0].shape == (self.INPUT_MAXLEN, 2, EMBEDDING_DIM)
-        assert self.ytrain.shape == (self.xtrain.shape[0], self.OUTPUT_LEN)
+        if len(self.xtrain) > 0:
+            assert self.xtrain[0].shape == (self.INPUT_MAXLEN, 2, EMBEDDING_DIM)
+        if len(self.ytrain) > 0:
+            assert self.ytrain.shape == (self.xtrain.shape[0], self.OUTPUT_LEN)
 
         self._build_model()
 
@@ -37,21 +39,23 @@ class ClusterNetwork():
         self.model = Sequential()
 
         # CNN
-        self.model.add(Conv2D(64, kernel_size=(5, 5), padding='same',
+        self.model.add(Conv2D(filters=32, kernel_size=(3, 5), padding='same',
                               activation='tanh', input_shape=(self.INPUT_MAXLEN, 2, EMBEDDING_DIM)))
-        # self.model.add(Conv2D(16, kernel_size=(3, 3)))
+        self.model.add(Conv2D(filters=16, kernel_size=(3, 3), padding='same', activation='tanh'))
         self.model.add(MaxPooling2D(pool_size=2))
         self.model.add(TimeDistributed(Flatten()))
 
         # LSTM
-        self.model.add(LSTM(1028, return_sequences=True,
-                            dropout=0.2, activation='tanh'))
-        self.model.add(LSTM(256, dropout=0.2, activation='tanh'))
-        self.model.add(Dense(256, activation='relu'))
-        self.model.add(Dense(512, activation='relu'))
+        self.model.add(LSTM(512, dropout=0.2, return_sequences=False))
+        # self.model.add(LSTM(256, dropout=0.2, return_sequences=True))
+        # self.model.add(LSTM(128, dropout=0.2))
+        self.model.add(Dense(512, activation='tanh'))
+        self.model.add(Dense(128, activation='relu'))
         self.model.add(Dense(self.OUTPUT_LEN, activation='tanh'))
 
-        opt = RMSprop(learning_rate=1e-3)
+        # opt = RMSprop(learning_rate=1e-3)
+        opt = RMSprop()
+        # opt = SGD()
         self.model.compile(loss='categorical_crossentropy',
                            optimizer=opt, metrics=['accuracy'])
         print(self.model.summary())
@@ -87,9 +91,9 @@ class ClusterNetwork():
         score, acc = self.model.evaluate(self.xtest, self.ytest)
         print(score, acc)
 
-    def predict(self, embeddings: Tensor):
-        padded = np.asarray(sequence.pad_sequences(
-            [embeddings], maxlen=self.INPUT_MAXLEN))
-        padded = padded.astype(np.float)
-        print(padded.shape)
-        return self.model.predict(padded)
+    def predict(self, embeddings: Tensor, padded_pos: Tensor):
+        padded_embeddings = np.asarray(sequence.pad_sequences(
+            [embeddings], maxlen=self.INPUT_MAXLEN, dtype='float32'))
+        print(padded_embeddings.shape)
+        print(padded_pos.shape)
+        # return self.model.predict(padded_embeddings)

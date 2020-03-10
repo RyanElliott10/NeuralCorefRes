@@ -17,6 +17,7 @@ import numpy as np
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from progress.bar import IncrementalBar
+from keras.preprocessing import sequence
 
 sys.path.append(os.path.abspath(
     f"{os.path.dirname(os.path.abspath(__file__))}/../"))
@@ -106,10 +107,13 @@ def preco_parser_demo(data):
     embedding_model = WordEmbedding(
         model_path=".././data/models/word_embeddings/preco-vectors.model")
     data = PreCoParser.prep_for_nn(data)
-    xtrain, ytrain = PreCoParser.get_train_data(data, INPUT_MAXLEN, OUTPUT_MAXLEN, embedding_model)
+    xtrain, ytrain = PreCoParser.get_train_data(
+        data, INPUT_MAXLEN, OUTPUT_MAXLEN, embedding_model)
+    print(xtrain.shape)
 
     gc.collect()
-    cluster_network = ClusterNetwork(xtrain[:8000], ytrain[:8000], xtrain[8000:], ytrain[8000:], inputmaxlen=INPUT_MAXLEN, outputlen=OUTPUT_MAXLEN)
+    cluster_network = ClusterNetwork(
+        xtrain[:8000], ytrain[:8000], xtrain[8000:], ytrain[8000:], inputmaxlen=INPUT_MAXLEN, outputlen=OUTPUT_MAXLEN)
     cluster_network.train()
 
 
@@ -124,10 +128,12 @@ def predict_from_model():
     embedding_model = WordEmbedding(
         model_path=".././data/models/word_embeddings/preco-vectors.model")
 
-    embeddings = embedding_model.get_embeddings(
-        ["``", "Is", "there", "anything", "else", "you", "need", ",", "honey", "?", "''"])
-    print(cluster_model.predict(embeddings) *
-          len(["``", "Is", "there", "anything", "else", "you", "need", ",", "honey", "?", "''"]))
+    sent = ["``", "Is", "there", "anything", "else", "you", "need", ",", "honey", "?", "''"]
+    embeddings = embedding_model.get_embeddings(sent)
+    pos_onehot = PreCoParser.get_pos_onehot_for_sent(sent, PreCoParser.get_pos_onehot())
+    padded_pos = np.asarray(sequence.pad_sequences(
+        [pos_onehot], maxlen=125, dtype='float32'))
+    print(cluster_model.predict(embeddings, padded_pos) * len(sent))
 
 
 if __name__ == "__main__":
