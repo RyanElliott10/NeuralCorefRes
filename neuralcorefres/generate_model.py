@@ -102,16 +102,14 @@ def word_embeddings_demo():
 
 def preco_parser_demo(data):
     INPUT_MAXLEN = 125
+    OUTPUT_MAXLEN = 125
     embedding_model = WordEmbedding(
         model_path=".././data/models/word_embeddings/preco-vectors.model")
     data = PreCoParser.prep_for_nn(data)
-    xtrain, ytrain = PreCoParser.get_train_data(data, maxinputlen=INPUT_MAXLEN, embedding_model)
-
-    print()
+    xtrain, ytrain = PreCoParser.get_train_data(data, INPUT_MAXLEN, OUTPUT_MAXLEN, embedding_model)
 
     gc.collect()
-    cluster_network = ClusterNetwork(
-        xtrain[:8000], ytrain[:8000], xtrain[8000:], ytrain[8000:], inputmaxlen=INPUT_MAXLEN)
+    cluster_network = ClusterNetwork(xtrain[:8000], ytrain[:8000], xtrain[8000:], ytrain[8000:], inputmaxlen=INPUT_MAXLEN, outputlen=OUTPUT_MAXLEN)
     cluster_network.train()
 
 

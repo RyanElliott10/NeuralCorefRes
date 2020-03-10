@@ -4,7 +4,8 @@ from typing import List
 import numpy as np
 import tensorflow as tf
 from keras import Sequential
-from keras.layers import LSTM, Conv2D, CuDNNLSTM, Dense, Dropout, MaxPooling2D, Flatten, Reshape
+from keras.layers import (LSTM, Conv2D, CuDNNLSTM, Dense, Dropout, Flatten, Conv3D, MaxPooling3D,
+                          MaxPooling2D, TimeDistributed)
 from keras.optimizers import Adam
 from keras.preprocessing import sequence
 
@@ -23,6 +24,10 @@ class ClusterNetwork():
         self.ytest = ytest
         self.INPUT_MAXLEN = inputmaxlen
         self.OUTPUT_LEN = outputlen
+
+        assert self.xtrain[0].shape == (self.INPUT_MAXLEN, 2, EMBEDDING_DIM)
+        assert self.ytrain.shape == (self.xtrain.shape[0], self.OUTPUT_LEN)
+
         self._build_model()
 
     def load_saved(self, path: str):
@@ -32,15 +37,12 @@ class ClusterNetwork():
         self.model = Sequential()
 
         # CNN
-        self.model.add(Conv2D(64, kernel_size=(8, 8), input_shape=(
-            self.INPUT_MAXLEN, 2, EMBEDDING_DIM), activation='relu', strides=(1, 1)))
-        self.model.add(MaxPooling2D(pool_size=(4, 4)))
-        self.model.add(Flatten())
-        self.model.add(Reshape(target_shape=(29, 6272)))
+        self.model.add(Conv2D(32, kernel_size=5, strides=(1), padding='same', input_shape=(self.INPUT_MAXLEN, 2, EMBEDDING_DIM)))
+        # self.model.add(Conv3D(16, kernel_size=(3, 3, 3)))
+        self.model.add(MaxPooling2D(pool_size=2))
+        self.model.add(TimeDistributed(Flatten()))
 
         # LSTM
-        # self.model.add(LSTM(512, input_shape=(self.INPUT_MAXLEN,
-        #                                       EMBEDDING_DIM), dropout=0.2, activation='tanh'))
         self.model.add(LSTM(512, return_sequences=False,
                             dropout=0.2, activation='tanh'))
         # self.model.add(LSTM(256, dropout=0.2, activation='tanh'))

@@ -142,7 +142,7 @@ class PreCoParser:
         organized_data = defaultdict(list)
         for dp in preco_data:
             [organized_data[ClusteredDictKey(dp.id, cluster.indices.sent_idx, tuple(
-                dp.sents[cluster.indices.sent_idx]))].append(cluster) for cluster in dp.entity_clusters[:1]]
+                dp.sents[cluster.indices.sent_idx]))].append(cluster) for cluster in dp.entity_clusters]
 
         return organized_data
 
@@ -157,7 +157,7 @@ class PreCoParser:
         return np.asarray([pos_onehot[p].to_numpy() for p in list(zip(*pos_tag(sent)))[1]])
 
     @staticmethod
-    def get_train_data(data: DefaultDict[ClusteredDictKey, PreCoCoreferenceDatapoint], maxinputlen: int, embedding_model) -> Tuple[List[Tensor], List[Tensor]]:
+    def get_train_data(data: DefaultDict[ClusteredDictKey, PreCoCoreferenceDatapoint], maxinputlen: int, maxoutputlen: int, embedding_model) -> Tuple[List[Tensor], List[Tensor]]:
         """
         (n_samples, n_words, n_attributes (word embedding, pos, etc))
         [ [ [ word_embedding, pos ] ] ]
@@ -198,14 +198,19 @@ class PreCoParser:
             # Delete every third element to remove sentence index
             del cluster_indices[0::3]
 
+            cluster_indices = sequence.pad_sequences(
+                [cluster_indices], maxlen=maxoutputlen, dtype='float32', padding='post')[0]
+            assert cluster_indices.shape == (maxoutputlen,)
+
             ytrain.append(np.asarray(cluster_indices) / len(key.sentence))
             bar.next()
 
         gc.collect()
-        print("\nFINAL XTRAIN SHAPE:", xtrain.shape)
-        print("SAMPLE XTRAIN 0:", xtrain[0][0][0])
-        print("SAMPLE XTRAIN 1:", xtrain[0][0][1])
-        return (np.asarray(xtrain, dtype='float32'), np.asarray(ytrain, dtype='float32'))
+        ytrain = np.asarray(ytrain, dtype='float32')
+        assert ytrain[0].shape == (maxoutputlen,)
+
+        # Slicing xtrain is an annoying side effect of the bug where parsing some sentences results in ill-formatted data
+        return (xtrain[:ytrain.shape[0]], ytrain)
 
 
 def main():
