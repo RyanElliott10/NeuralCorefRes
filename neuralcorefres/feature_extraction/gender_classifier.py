@@ -17,8 +17,7 @@ HARD_GENDERED_WORDS = {
     'she\'d': 'female',
     'gal': 'female'
 }
-NOUN_PREFIXES = set(
-    ['NN', 'NNS', 'NNNP', 'NNPS', 'PRP', 'PRP$', 'WP', 'WP$'])
+NOUN_PREFIXES = set(['NN', 'NNS', 'NNNP', 'NNPS', 'PRP', 'PRP$', 'WP', 'WP$'])
 GENDERED_NOUN_PREFIXES = set(['NNNP', 'NNPS', 'PRP', 'PRP$'])
 
 
@@ -43,8 +42,7 @@ class GenderClassifier:
         labeled_names = male_labeled_names + female_labeled_names
         random.shuffle(labeled_names)
 
-        featuresets = [(GenderClassifier.gender_features(n), gender)
-                       for (n, gender) in labeled_names]
+        featuresets = [(GenderClassifier.gender_features(n), gender)for (n, gender) in labeled_names]
 
         train_set = featuresets[500:]
         classifier = nltk.NaiveBayesClassifier.train(train_set)

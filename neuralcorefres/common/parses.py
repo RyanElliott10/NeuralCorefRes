@@ -9,10 +9,10 @@ from typing import Tuple
 
 
 class Dependency:
-    def __init__(self, dependent: Tuple[str, str], relation: str, source: Tuple[str, str]):
-        self._dependent = dependent
-        self._relation = relation
+    def __init__(self, source: Tuple[str, str], relation: str, dependent: Tuple[str, str],):
         self._source = source
+        self._relation = relation
+        self._dependent = dependent
 
     def reveal(self) -> str:
         return f"DEP: {self._dependent} REL: {self._relation} SOURCE: {self._source}"
@@ -27,3 +27,6 @@ class Dependency:
         if not id:
             return ("dependent", "relation", "source")
         return ("id", "dependent", "relation", "source")
+
+    def __str__(self) -> str:
+        return f"{self._source} -> {self._dependent} | {self._relation}"

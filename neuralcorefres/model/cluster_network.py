@@ -4,13 +4,13 @@ from typing import List
 import numpy as np
 import tensorflow as tf
 from keras import Sequential
-from keras.layers import (LSTM, Conv2D, Dense, Dropout, Flatten, MaxPooling2D,
-                          TimeDistributed)
-from keras.optimizers import RMSprop, SGD
+from keras.layers import LSTM, Conv2D, Dense, Dropout, Flatten, MaxPooling2D, TimeDistributed
+from keras.optimizers import SGD, Adam, RMSprop
 from keras.preprocessing import sequence
 
 from neuralcorefres.model.word_embedding import EMBEDDING_DIM
 
+# Enable AMD GPU usage
 os.environ["KERAS_BACKEND"] = "plaidml.keras.backend"
 
 Tensor = List[float]
@@ -26,8 +26,7 @@ class ClusterNetwork():
         self.OUTPUT_LEN = outputlen
 
         if len(self.xtrain) > 0:
-            assert self.xtrain[0].shape == (self.INPUT_MAXLEN, 2, EMBEDDING_DIM)
-        if len(self.ytrain) > 0:
+            assert self.xtrain[0].shape == (self.INPUT_MAXLEN, 3, EMBEDDING_DIM)
             assert self.ytrain.shape == (self.xtrain.shape[0], self.OUTPUT_LEN)
 
         self._build_model()
@@ -36,57 +35,37 @@ class ClusterNetwork():
         self.model = tf.keras.models.load_model(path)
 
     def _build_model(self):
+        INPUT_SHAPE = (self.INPUT_MAXLEN, 4, EMBEDDING_DIM)
         self.model = Sequential()
 
         # CNN
-        self.model.add(Conv2D(filters=32, kernel_size=(3, 5), padding='same',
-                              activation='tanh', input_shape=(self.INPUT_MAXLEN, 2, EMBEDDING_DIM)))
-        self.model.add(Conv2D(filters=16, kernel_size=(3, 3), padding='same', activation='tanh'))
-        self.model.add(MaxPooling2D(pool_size=2))
+        self.model.add(Conv2D(32, kernel_size=(3, 5), padding='same', activation='relu', input_shape=INPUT_SHAPE))
+        self.model.add(MaxPooling2D(2))
         self.model.add(TimeDistributed(Flatten()))
 
-        # LSTM
-        self.model.add(LSTM(512, dropout=0.2, return_sequences=False))
-        # self.model.add(LSTM(256, dropout=0.2, return_sequences=True))
-        # self.model.add(LSTM(128, dropout=0.2))
+        # RNN
+        self.model.add(LSTM(1028, return_sequences=True, dropout=0.5, activation='relu'))
+        self.model.add(LSTM(512, dropout=0.3, activation='tanh'))
+
+        # Dense
         self.model.add(Dense(512, activation='tanh'))
-        self.model.add(Dense(128, activation='relu'))
+        self.model.add(Dense(256, activation='relu'))
         self.model.add(Dense(self.OUTPUT_LEN, activation='tanh'))
 
-        # opt = RMSprop(learning_rate=1e-3)
-        opt = RMSprop()
-        # opt = SGD()
-        self.model.compile(loss='categorical_crossentropy',
-                           optimizer=opt, metrics=['accuracy'])
-        print(self.model.summary())
+        opt = RMSprop(learning_rate=1e-3)
+        self.model.compile(loss='logcosh', optimizer=opt, metrics=['acc'])
+        self.model.summary()
 
     def _pad_sequences(self):
-        """
-        (n_samples, n_words, n_attributes (word embedding, pos, etc))
-        [ [ word_embedding, pos ] ]
+        self.ytrain = sequence.pad_sequences(self.ytrain, maxlen=self.OUTPUT_LEN, dtype='float32', padding='post')
+        self.ytest = sequence.pad_sequences(self.ytest, maxlen=self.OUTPUT_LEN, dtype='float32', padding='post')
 
-        xtrain[sentence_sample][word_position][attribute]
-        xtrain[0][0] -> first word's attributes in first sentence
-        xtrain[37][5] -> sixth word's attributes in 38th sentence
-        xtrain[0][0][0] -> word_embedding
-        xtrain[0][0][1] -> pos one-hot encoding
-        """
-        self.ytrain = sequence.pad_sequences(
-            self.ytrain, maxlen=self.OUTPUT_LEN, dtype='float32', padding='post')
-        self.ytest = sequence.pad_sequences(
-            self.ytest, maxlen=self.OUTPUT_LEN, dtype='float32', padding='post')
-
-        assert self.xtrain[0].shape == (self.INPUT_MAXLEN, 2, EMBEDDING_DIM)
-
-        # print("\nXTRAIN FINAL SHAPE:", self.xtrain.shape)
-        # print("\nYTRAIN FINAL SHAPE:", self.ytrain.shape)
-
-        # Current issue: this fails because some data isn't being parsed and prepared correctly
-        # assert self.ytrain.shape == (self.xtrain.shape[0], self.OUTPUT_LEN)
+        assert self.xtrain[0].shape == (self.INPUT_MAXLEN, 3, EMBEDDING_DIM)
+        assert self.ytrain.shape == (self.xtrain.shape[0], self.OUTPUT_LEN)
 
     def train(self):
         self._pad_sequences()
-        self.model.fit(self.xtrain, self.ytrain, epochs=1)
+        self.model.fit(self.xtrain, self.ytrain, epochs=3)
         self.model.save(".././data/models/clusters/small.h5")
         score, acc = self.model.evaluate(self.xtest, self.ytest)
         print(score, acc)
