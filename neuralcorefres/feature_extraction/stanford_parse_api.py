@@ -37,6 +37,7 @@ class StanfordParseAPI:
 
     @staticmethod
     def _dependency_parse(sent: str) -> List[Dependency]:
+        print(sent)
         result = StanfordParseAPI._dependency_parser.raw_parse(sent)
         tmp = list(result.__next__().triples())
         return [Dependency(*res) for res in tmp]

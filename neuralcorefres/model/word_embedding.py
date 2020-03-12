@@ -27,27 +27,26 @@ from neuralcorefres.common.sentence import Sentence
 Tensor = List[float]
 
 
-EMBEDDING_DIM = 400
+EMBEDDING_DIM = 300
 
 
 class WordEmbedding:
     def __init__(self, model_path: str = None, sents: List[Sentence] = None, is_tokenized: bool = False):
-        self.embedding_model = self._load_model(
-            model_path, sents, is_tokenized)
+        self.embedding_model = self._load_model(model_path, sents, is_tokenized)
 
     def _load_model(self, model_path: str, sents: List[Sentence], is_tokenized: bool):
         if model_path is not None and os.path.exists(model_path):
-            print('\nLoading model')
+            print('\n*\tLoading model')
             model = KeyedVectors.load(model_path)
             word_vectors = model
         elif sents is None:
-            print('\nLoading Google News word vectors...')
+            print('\n*\tLoading Google News word vectors...')
             model = KeyedVectors.load_word2vec_format(
                 '.././data/GoogleNews-vectors-negative300.bin.gz', binary=True)
             model.wv.save(model_path)
             word_vectors = model
         else:
-            print('\nTraining model on new data...')
+            print('\n*\tTraining model on new data...')
             if is_tokenized:
                 model = Word2Vec(
                     sentences=sents, size=EMBEDDING_DIM, workers=5)
@@ -80,17 +79,14 @@ class WordEmbedding:
         """
         summations = None
         valid_num = 0
+
         for surr in surrounding_words:
             if self.embedding_model.__contains__(surr):
                 valid_num += 1
                 arr = np.asarray(self.embedding_model[surr])
-                if summations is None:
-                    summations = arr
-                else:
-                    summations = np.add(summations, arr)
-        if summations is not None:
-            return summations / valid_num
-        return None
+                summations = (arr if summations is None else np.add(summations, arr))
+
+        return np.zeros(EMBEDDING_DIM) if summations is None else summations / valid_num
 
     def tokenizetext(self, sents: List[Sentence]) -> List[List[str]]:
         return [word_tokenize(sent.alphanumeric_text) for sent in sents]
@@ -98,7 +94,15 @@ class WordEmbedding:
     def _get_embedding(self, token: str, tokenized: List[str], index: int) -> Tensor:
         if self.embedding_model.__contains__(token):
             return np.asarray(self.embedding_model[token])
+
         # FIXME this takes a long time. Can be optimized by storing array of indices that need to be fixed and fixing at end using current embeddings
+
+        # OOB checking
+        if index < 3:
+            index = 3
+        elif index > len(tokenized) - 3:
+            index = len(tokenized) - 4
+
         return self._estimate_embedding(tokenized[index-3:index+3], token)
 
     def get_embeddings(self, tokenized: List[str], verbose: bool = False) -> List[Tensor]:
