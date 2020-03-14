@@ -15,6 +15,11 @@ os.environ["KERAS_BACKEND"] = "plaidml.keras.backend"
 
 Tensor = List[float]
 
+"""
+Big change, but what if I ditch cluster and instead only use nouns and find out what clusters from the training data they belong to and pass that into
+the coreference network?
+"""
+
 
 class ClusterNetwork():
     def __init__(self, xtrain: List[Tensor] = [], ytrain: List[Tensor] = [], xtest: List[Tensor] = [], ytest: List[Tensor] = [], inputmaxlen: int = 125, outputlen: int = 125):

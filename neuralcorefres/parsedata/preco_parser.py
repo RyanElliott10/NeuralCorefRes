@@ -53,16 +53,16 @@ class EntityCluster:
 
 
 class PreCoCoreferenceDatapoint:
-    def __init__(self, id, sents: List[Cluster], entity_clusters: EntityCluster):
+    def __init__(self, id, sents: List[Cluster], sorted_entity_clusters: EntityCluster):
         self.id = id
         self.sents = sents
-        self.entity_clusters = self._get_sorted_clusters(entity_clusters)
+        self.sorted_entity_clusters = self._get_sorted_clusters(sorted_entity_clusters)
 
     def _get_sorted_clusters(self, clusters) -> List[EntityCluster]:
         return sorted(clusters, key=lambda cluster: cluster.indices.sent_idx)
 
     @staticmethod
-    def parse_entity_clusters(sentences: List[List[str]], entity_clusters: List[List[List[int]]]):
+    def parse_sorted_entity_clusters(sentences: List[List[str]], sorted_entity_clusters: List[List[List[int]]]):
         """
         Per the PreCo website, mention clusters are in the following form:
         [ [ [ sentence_idx, begin_idx, end_idx ] ] ]
@@ -85,11 +85,11 @@ class PreCoCoreferenceDatapoint:
         ]
         """
         clusters = [[EntityCluster(sentences[sent_idx][begin_idx:end_idx], (sent_idx, begin_idx, end_idx))
-                     for sent_idx, begin_idx, end_idx in cluster][0] for cluster in entity_clusters]
+                     for sent_idx, begin_idx, end_idx in cluster][0] for cluster in sorted_entity_clusters]
         return clusters
 
     def __str__(self):
-        sub_strs = '\t' + '\n\t'.join([str(cluster) for cluster in self.entity_clusters])
+        sub_strs = '\t' + '\n\t'.join([str(cluster) for cluster in self.sorted_entity_clusters])
         return f"{self.id}\n{sub_strs}"
 
 
@@ -117,12 +117,13 @@ class PreCoParser:
 
         bar = IncrementalBar('*\tReading and creating objects from PreCo dataset', max=len(df))
         for index, el in df.iterrows():
-            entity_clusters = PreCoCoreferenceDatapoint.parse_entity_clusters(el[u'sentences'], el[u'mention_clusters'])
-            ret_lst.append(PreCoCoreferenceDatapoint(el[u'id'], el[u'sentences'], entity_clusters))
+            # sorted_entity_clusters = PreCoCoreferenceDatapoint.parse_sorted_entity_clusters(el[u'sentences'], el[u'mention_clusters'])
+            # ret_lst.append(PreCoCoreferenceDatapoint(el[u'id'], el[u'sentences'], sorted_entity_clusters))
+            ret_lst.append((el[u'sentences'], el[u'mention_clusters']))
             bar.next()
 
         gc.collect()
-        return ret_lst
+        return ret_lst[:10]
 
     @staticmethod
     def flatten_tokenized(sents: List[PreCoCoreferenceDatapoint]):
@@ -199,7 +200,7 @@ class PreCoParser:
         organized_data = defaultdict(list)
         for dp in preco_data:
             [organized_data[ClusteredDictKey(dp.id, cluster.indices.sent_idx, tuple(
-                dp.sents[cluster.indices.sent_idx]))].append(cluster) for cluster in dp.entity_clusters]
+                dp.sents[cluster.indices.sent_idx]))].append(cluster) for cluster in dp.sorted_entity_clusters]
 
         return organized_data
 

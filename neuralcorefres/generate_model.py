@@ -28,9 +28,9 @@ from neuralcorefres.feature_extraction.stanford_parse_api import \
     StanfordParseAPI
 from neuralcorefres.model.cluster_network import ClusterNetwork
 from neuralcorefres.model.word_embedding import WordEmbedding
+from neuralcorefres.parsedata.parse_clusters import ParseClusters
 from neuralcorefres.parsedata.preco_parser import PreCoDataType, PreCoParser
 from neuralcorefres.util.data_storage import write_dependency_file
-
 
 
 pretty_printer = pprint.PrettyPrinter()
@@ -99,8 +99,10 @@ def preco_parser_demo(data):
     gc.collect()
     np.set_printoptions(threshold=sys.maxsize)
 
-    cluster_network = ClusterNetwork(xtrain[:8000], ytrain[:8000], xtrain[8000:],
-                                     ytrain[8000:], inputmaxlen=INPUT_MAXLEN, outputlen=OUTPUT_MAXLEN)
+    # cluster_network = ClusterNetwork(xtrain[:8000], ytrain[:8000], xtrain[8000:],
+    #                                  ytrain[8000:], inputmaxlen=INPUT_MAXLEN, outputlen=OUTPUT_MAXLEN)
+    cluster_network = ClusterNetwork(xtrain[:190], ytrain[:190], xtrain[190:],
+                                     ytrain[190:], inputmaxlen=INPUT_MAXLEN, outputlen=OUTPUT_MAXLEN)
     cluster_network.train()
 
 
@@ -121,7 +123,16 @@ def predict_from_model():
     print(cluster_model.predict(embeddings, padded_pos) * len(sent))
 
 
+def parse_clusters():
+    data = PreCoParser.get_preco_data(PreCoDataType.TEST)[0]
+    clusters = dict(zip(range(len(data[1])), data[1]))
+    reduced_clusters = ParseClusters.get_reduced_clusters(data[0], clusters)
+
+    print(len(reduced_clusters[50]))
+
+
 if __name__ == "__main__":
     # word_embeddings_demo()
-    train_model()
+    # train_model()
     # predict_from_model()
+    parse_clusters()

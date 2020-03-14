@@ -20,15 +20,14 @@ def findall_entities(tagged_sent: List[TaggedPOS]) -> Tuple[List[Tuple[TaggedPOS
     """
     Finds all direct and indirect nouns/pronouns in a POS tagged sentence.
     """
-    directs = []
-    indirects = []
+    entities = []
     for i, tag in enumerate(tagged_sent):
         if len(re.findall(r"(?=("+'|'.join(DIRECT_POS)+r"))", tag[1])) > 0:
-            directs.append((tag, i))
+            entities.append((tag, i))
         elif len(re.findall(r"(?=("+'|'.join(INDIRECT_POS)+r"))", tag[1])) > 0:
-            indirects.append((tag, i))
+            entities.append((tag, i))
 
-    return (directs, indirects)
+    return entities
 
 
 def spacy_entities(sent: str) -> List:
