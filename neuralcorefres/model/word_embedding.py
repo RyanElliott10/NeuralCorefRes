@@ -36,26 +36,22 @@ class WordEmbedding:
 
     def _load_model(self, model_path: str, sents: List[Sentence], is_tokenized: bool):
         if model_path is not None and os.path.exists(model_path):
-            print('\n*\tLoading model')
+            print('*\tLoading model')
             model = KeyedVectors.load(model_path)
             word_vectors = model
         elif sents is None:
-            print('\n*\tLoading Google News word vectors...')
-            model = KeyedVectors.load_word2vec_format(
-                '.././data/GoogleNews-vectors-negative300.bin.gz', binary=True)
+            print('*\tLoading Google News word vectors...')
+            model = KeyedVectors.load_word2vec_format('.././data/GoogleNews-vectors-negative300.bin.gz', binary=True)
             model.wv.save(model_path)
             word_vectors = model
         else:
-            print('\n*\tTraining model on new data...')
+            print('*\tTraining model on new data...')
             if is_tokenized:
-                model = Word2Vec(
-                    sentences=sents, size=EMBEDDING_DIM, workers=5)
+                model = Word2Vec(sentences=sents, size=EMBEDDING_DIM, workers=5)
             else:
-                model = Word2Vec(sentences=tokenizetext(sents),
-                                 size=EMBEDDING_DIM, min_count=0, workers=5)
+                model = Word2Vec(sentences=tokenizetext(sents), size=EMBEDDING_DIM, min_count=0, workers=5)
             word_vectors = model.wv
-            word_vectors.save(
-                '.././data/models/word_embeddings/gap-vectors.model')
+            word_vectors.save('.././data/models/word_embeddings/gap-vectors.model')
 
         return word_vectors
 
@@ -111,8 +107,7 @@ class WordEmbedding:
         """
         embeddings = []
         if verbose:
-            bar = IncrementalBar(
-                'Generating word embeddings...', max=len(tokenized))
+            bar = IncrementalBar('Generating word embeddings...', max=len(tokenized))
         for i, token in enumerate(tokenized):
             embedding = self._get_embedding(token, tokenized, i)
             if embedding is not None:

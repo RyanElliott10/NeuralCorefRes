@@ -5,44 +5,28 @@
 #
 # For license information, see LICENSE
 
+import csv
+import gc
+import itertools
+import pprint
 import re
 from collections import defaultdict
-from typing import DefaultDict, List, Set, Tuple
+from typing import DefaultDict, Dict, List, Set, Tuple
 
-import pprint
 import numpy as np
+import pandas as pd
 import spacy
 from nltk import pos_tag
+from progress.bar import IncrementalBar
 
 pretty_printer = pprint.PrettyPrinter()
-
-"""
-I'm going to create new objects containing: tokenized_sentence, modified mention_clusters explicitly with
-
-Each sentence  
-
-clusters = defaultdict(index, [[clusters]])
-
-clusters = defaultdict(1, [
-    [
-        [1, 2, 3], [1, 5, 6]
-    ],
-    [
-        [1, 4, 5]
-    ]
-]
-)
-
-run each sentence through SpaCy's named entity recognition to extract names, companies, etc. and use DIRECT_POS and INDIRECT_POS to get he, him, they, she, them, etc.
-for each sentence, construct an object containing: tokenize_sentence, mention word (he, him, they, them, Paul)
-"""
 
 ClusterIndices = List[List[int]]
 
 REDUCED_SPACY_NE_TAGS = ['PERSON', 'NORP', 'FAC', 'ORG', 'GPE', 'LOC', 'PRODUCT', 'EVENT', 'WORK_OF_ART', 'LAW', 'LANGUAGE', 'DATE', 'TIME']
-REDUCED_SPACY_TAGS = ["NN", "NNP", "NNPS", "NNS", "PRP", "PRP$", "WP"]
+REDUCED_SPACY_TAGS = ['NN', 'NNP', 'NNPS', 'NNS', 'PRP', 'PRP$', 'WP']
 
-nlp = spacy.load("en_core_web_sm")
+nlp = spacy.load('en_core_web_sm')
 
 
 class ParseClusters:
@@ -53,8 +37,10 @@ class ParseClusters:
         return [(i, i+len(tokens)) for i in range(len(arr)) if arr[i:i+len(tokens)] == tokens]
 
     @staticmethod
-    def get_named_entities(sent: str) -> DefaultDict[str, List[int]]:
+    def get_named_entities(sent: List[str]) -> DefaultDict[str, List[int]]:
         """ Accepts a tokenized sentence (or sentences) and returns a list of named entities with their indices. """
+        if isinstance(sent, str):
+            sent = [tok.text for tok in nlp(sent)]
         doc = nlp(' '.join(sent))
 
         # Get spacy named entities
@@ -87,6 +73,7 @@ class ParseClusters:
 
     @staticmethod
     def _get_overlap(index_range: List[int], match: List[int]) -> float:
+        """ Returns percentage of the match the word is in. """
         return (index_range[1]-index_range[0]) / (match[2]-match[1])
 
     @staticmethod
@@ -110,16 +97,27 @@ class ParseClusters:
         [[[reduced[ParseClusters._get_best_cluster(index_range, clusters, sent_ndx)[1]].append((sent_ndx, index_range[0], index_range[1])) for index_range in indices] for (
             key, indices) in ParseClusters.get_named_entities(sent).items()] for (sent_ndx, sent) in enumerate(sents)]
 
-        del reduced[None]
+        if None in reduced.keys():
+            del reduced[None]
         return reduced
 
+    @staticmethod
+    def write_custom_to_file(reductions: Tuple[List[str], List[Dict[int, List[List[int]]]]], filepath: str):
+        df = pd.DataFrame.from_records(reductions, columns=[u'sentences', u'mention_clusters'])
+        df.to_json(filepath)
 
-if __name__ == "__main__":
-    sent1 = ["Charlie", "Schnelz", "ran", "to", "the", "park", "and", "he", ",", "Charlie", ",", "had", "fun", ".", ]
-    sent2 = ["The", "Frank", "Committee", "ran", "to", "Farrell", "Smyth", "."]
-    sent3 = ["And", "then", "he", "ran", "to", "Target", "across", "from", "it", "."]
-    sent4 = ["``", "Is", "there", "anything", "else", "you", "need", ",", "honey", "?", "''"]
-    sent5 = ["my", "dad", "asked", "me", "as", "he", "put", "three", "twenty", "dollar", "bills", "in", "my", "hand", "."]
+    @staticmethod
+    def get_from_file(filepath: str) -> Tuple[List[str], List[Dict[int, List[List[int]]]]]:
+        df = pd.read_json(filepath, lines=True, encoding='ascii')
+        return np.asarray(list(df[u'sentences'][0].values())), np.asarray(list(df[u'mention_clusters'][0].values()))
+
+
+if __name__ == '__main__':
+    sent1 = ['Charlie', 'Schnelz', 'ran', 'to', 'the', 'park', 'and', 'he', ',', 'Charlie', ',', 'had', 'fun', '.', ]
+    sent2 = ['The', 'Frank', 'Committee', 'ran', 'to', 'Farrell', 'Smyth', '.']
+    sent3 = ['And', 'then', 'he', 'ran', 'to', 'Target', 'across', 'from', 'it', '.']
+    sent4 = ['``', 'Is', 'there', 'anything', 'else', 'you', 'need', ',', 'honey', '?', '\'\'']
+    sent5 = ['my', 'dad', 'asked', 'me', 'as', 'he', 'put', 'three', 'twenty', 'dollar', 'bills', 'in', 'my', 'hand', '.']
 
     preco_sents = [sent1, sent2, sent3, sent4, sent5]
     preco_clusters = [

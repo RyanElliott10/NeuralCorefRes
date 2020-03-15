@@ -10,6 +10,7 @@ import os
 import pprint
 import re
 import sys
+from itertools import zip_longest
 from typing import List
 
 import nltk
@@ -19,7 +20,7 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from progress.bar import IncrementalBar
 
-sys.path.append(os.path.abspath(f"{os.path.dirname(os.path.abspath(__file__))}/../"))
+sys.path.append(os.path.abspath(f'{os.path.dirname(os.path.abspath(__file__))}/../'))
 import neuralcorefres.parsedata.gap_parser as GAPParse
 from neuralcorefres.common import Sentence
 from neuralcorefres.feature_extraction.gender_classifier import (
@@ -27,6 +28,7 @@ from neuralcorefres.feature_extraction.gender_classifier import (
 from neuralcorefres.feature_extraction.stanford_parse_api import \
     StanfordParseAPI
 from neuralcorefres.model.cluster_network import ClusterNetwork
+from neuralcorefres.model.coreference_network import CoreferenceNetwork
 from neuralcorefres.model.word_embedding import WordEmbedding
 from neuralcorefres.parsedata.parse_clusters import ParseClusters
 from neuralcorefres.parsedata.preco_parser import PreCoDataType, PreCoParser
@@ -84,15 +86,15 @@ def word_embeddings():
 
 def word_embeddings_demo():
     """ Demo of word embeddings using a pre-trained model on PreCo data. """
-    embedding_model = WordEmbedding(model_path=".././data/models/word_embeddings/preco-vectors.model")
+    embedding_model = WordEmbedding(model_path='.././data/models/word_embeddings/preco-vectors.model')
     print(embedding_model.embedding_model.most_similar(positive=['water', 'sand']))
 
 
 def preco_parser_demo(data):
     INPUT_MAXLEN = 200
     OUTPUT_MAXLEN = 200
-    # embedding_model = WordEmbedding(model_path=".././data/models/word_embeddings/preco-vectors.model")
-    embedding_model = WordEmbedding(model_path=".././data/models/word_embeddings/google-vectors.model")
+    # embedding_model = WordEmbedding(model_path='.././data/models/word_embeddings/preco-vectors.model')
+    embedding_model = WordEmbedding(model_path='.././data/models/word_embeddings/google-vectors.model')
     data = PreCoParser.prep_for_nn(data)
     xtrain, ytrain = PreCoParser.get_train_data(data, INPUT_MAXLEN, OUTPUT_MAXLEN, embedding_model)
 
@@ -106,33 +108,57 @@ def preco_parser_demo(data):
     cluster_network.train()
 
 
-def train_model():
-    data = PreCoParser.get_preco_data(PreCoDataType.TEST)
-    preco_parser_demo(data)
+# def train_model():
+#     data = PreCoParser.get_preco_data(PreCoDataType.TEST)
+#     preco_parser_demo(data)
 
 
-def predict_from_model():
-    cluster_model = ClusterNetwork()
-    cluster_model.load_saved(".././data/models/clusters/small.h5")
-    embedding_model = WordEmbedding(model_path=".././data/models/word_embeddings/preco-vectors.model")
-
-    sent = ["``", "Is", "there", "anything", "else", "you", "need", ",", "honey", "?", "''"]
-    embeddings = embedding_model.get_embeddings(sent)
-    pos_onehot = PreCoParser.get_pos_onehot_for_sent(sent, PreCoParser.get_pos_onehot())
-    padded_pos = np.asarray(sequence.pad_sequences([pos_onehot], maxlen=125, dtype='float32'))
-    print(cluster_model.predict(embeddings, padded_pos) * len(sent))
+def grouper(iterable, n, fillvalue=None):
+    args = [iter(iterable)] * n
+    return zip_longest(*args, fillvalue=fillvalue)
 
 
 def parse_clusters():
-    data = PreCoParser.get_preco_data(PreCoDataType.TEST)[0]
-    clusters = dict(zip(range(len(data[1])), data[1]))
-    reduced_clusters = ParseClusters.get_reduced_clusters(data[0], clusters)
+    data = PreCoParser.get_preco_data(PreCoDataType.TRAIN)[4000:]
+    total_clusters = dict(zip(range(len(data[1])), data[1]))
 
-    print(len(reduced_clusters[50]))
+    print()
+    bar = IncrementalBar('*\tConverting PreCo dataset to custom dataset form', max=len(data))
+    reductions: List[Tuple[List[str], Dict[int, List[List[int]]]]] = []
+
+    batches = grouper(data, 1000)
+    for i, batch in enumerate(batches):
+        reductions: List[Tuple[List[str], Dict[int, List[List[int]]]]] = []
+        for dp in batch:
+            reductions.append((dp[0], ParseClusters.get_reduced_clusters(dp[0], dict(zip(range(len(dp[1])), dp[1])))))
+            bar.next()
+        ParseClusters.write_custom_to_file(reductions, f'../data/PreCo_1.0/custom_dps/train_b{i+4}.json')
 
 
-if __name__ == "__main__":
+def train_model():
+    sents, clusters = ParseClusters.get_from_file('../data/PreCo_1.0/custom_dps/dev.json')[:50]
+    xtrain, ytrain = CoreferenceNetwork.custom_cluster_to_nn_input(sents, clusters)
+
+
+def predict_from_model():
+    # cluster_model = ClusterNetwork()
+    # cluster_model.load_saved('.././data/models/clusters/small.h5')
+    # embedding_model = WordEmbedding(model_path='.././data/models/word_embeddings/preco-vectors.model')
+
+    # sent = ['``', 'Is', 'there', 'anything', 'else', 'you', 'need', ',', 'honey', '?', '\'\'']
+    # embeddings = embedding_model.get_embeddings(sent)
+    # pos_onehot = PreCoParser.get_pos_onehot_map_for_sent(sent, PreCoParser.get_pos_onehot_map())
+    # padded_pos = np.asarray(sequence.pad_sequences([pos_onehot], maxlen=125, dtype='float32'))
+    # print(cluster_model.predict(embeddings, padded_pos) * len(sent))
+
+    
+    sent = "Charlie Schnelz ran to the park and he, Charlie, had an absolute blast!"
+    ents = ParseClusters.get_named_entities(sent)
+    print(ents)
+
+
+if __name__ == '__main__':
     # word_embeddings_demo()
-    # train_model()
+    train_model()
     # predict_from_model()
-    parse_clusters()
+    # parse_clusters()

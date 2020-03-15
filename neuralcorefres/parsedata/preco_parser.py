@@ -34,7 +34,7 @@ ClusteredDictKey = namedtuple('ClusteredDictKey', 'id sentence_index sentence')
 SPACY_DEP_TAGS = ['acl', 'acomp', 'advcl', 'advmod', 'agent', 'amod', 'appos', 'attr', 'aux', 'auxpass', 'case', 'cc', 'ccomp', 'compound', 'conj', 'cop', 'csubj', 'csubjpass', 'dative', 'dep', 'det', 'dobj', 'expl',
                   'intj', 'mark', 'meta', 'neg', 'nn', 'nounmod', 'npmod', 'nsubj', 'nsubjpass', 'nummod', 'oprd', 'obj', 'obl', 'parataxis', 'pcomp', 'pobj', 'poss', 'preconj', 'prep', 'prt', 'punct', 'quantmod', 'relcl', 'root', 'xcomp']
 
-nlp = spacy.load("en_core_web_sm")
+nlp = spacy.load('en_core_web_sm')
 POS_ONE_HOT_LEN = 45
 
 
@@ -49,7 +49,7 @@ class EntityCluster:
         self.indices = ClusterIndicies(*indices)
 
     def __str__(self):
-        return f"{self.entity} | {self.indices}"
+        return f'{self.entity} | {self.indices}'
 
 
 class PreCoCoreferenceDatapoint:
@@ -74,8 +74,8 @@ class PreCoCoreferenceDatapoint:
 
         Sentences:
         [
-            [ "Charlie", "had", "fun", "at", "the", "park", "." ],
-            [ "He", "slid", "down", "the", "slide", "." ]
+            [ 'Charlie', 'had', 'fun', 'at', 'the', 'park', '.' ],
+            [ 'He', 'slid', 'down', 'the', 'slide', '.' ]
         ]
         Mention Clusters:
         [
@@ -90,19 +90,19 @@ class PreCoCoreferenceDatapoint:
 
     def __str__(self):
         sub_strs = '\t' + '\n\t'.join([str(cluster) for cluster in self.sorted_entity_clusters])
-        return f"{self.id}\n{sub_strs}"
+        return f'{self.id}\n{sub_strs}'
 
 
-_BASE_FILEPATH = "../data/PreCo_1.0/"
+_BASE_FILEPATH = '../data/PreCo_1.0/'
 _FILE_TYPES = {
-    PreCoDataType.TRAIN: "train.json",
-    PreCoDataType.TEST: "dev.json"
+    PreCoDataType.TRAIN: 'train.json',
+    PreCoDataType.TEST: 'dev.json'
 }
 
 
 class PreCoParser:
     @staticmethod
-    def get_pos_onehot():
+    def get_pos_onehot_map():
         return pd.get_dummies(list(load('help/tagsets/upenn_tagset.pickle').keys()))
 
     @staticmethod
@@ -110,20 +110,18 @@ class PreCoParser:
         return pd.get_dummies(SPACY_DEP_TAGS)
 
     @staticmethod
-    def get_preco_data(data_type: PreCoDataType, basepath: str = _BASE_FILEPATH, class_type: PreCoCoreferenceDatapoint = PreCoCoreferenceDatapoint) -> List[PreCoCoreferenceDatapoint]:
+    def get_preco_data(data_type: PreCoDataType, basepath: str = _BASE_FILEPATH, class_type: PreCoCoreferenceDatapoint = PreCoCoreferenceDatapoint):
         ret_lst = []
         full_filepath = basepath + _FILE_TYPES[data_type]
         df = pd.read_json(full_filepath, lines=True, encoding='ascii')
 
         bar = IncrementalBar('*\tReading and creating objects from PreCo dataset', max=len(df))
         for index, el in df.iterrows():
-            # sorted_entity_clusters = PreCoCoreferenceDatapoint.parse_sorted_entity_clusters(el[u'sentences'], el[u'mention_clusters'])
-            # ret_lst.append(PreCoCoreferenceDatapoint(el[u'id'], el[u'sentences'], sorted_entity_clusters))
             ret_lst.append((el[u'sentences'], el[u'mention_clusters']))
             bar.next()
 
         gc.collect()
-        return ret_lst[:10]
+        return ret_lst
 
     @staticmethod
     def flatten_tokenized(sents: List[PreCoCoreferenceDatapoint]):
@@ -136,7 +134,7 @@ class PreCoParser:
         return embedding_model.get_embeddings(sent)
 
     @staticmethod
-    def get_pos_onehot_for_sent(sent: List[str], pos_onehot) -> List[Tensor]:
+    def get_pos_onehot_map_for_sent(sent: List[str], pos_onehot) -> List[Tensor]:
         """ Get POS as array of one-hot arrays. In same order as words from sentence (if used correctly). """
         return np.asarray([pos_onehot[p].to_numpy() if p in pos_onehot.keys() else np.zeros(len(pos_onehot.keys())) for p in list(zip(*pos_tag(sent)))[1]])
 
@@ -171,7 +169,7 @@ class PreCoParser:
         return np.asarray([deps_onehot[p].to_numpy() if p in deps_onehot.keys() else np.zeros(len(deps_onehot.keys())) for p in [token.dep_ for token in doc]])
 
     @staticmethod
-    def pad_1d_tensor(t):
+    def pad_1d_tensor(t, maxlen=EMBEDDING_DIM):
         return sequence.pad_sequences([t], maxlen=EMBEDDING_DIM, dtype='float32', padding='post')[0]
 
     @staticmethod
@@ -217,7 +215,7 @@ class PreCoParser:
         """
         xtrain = np.empty((len(data), maxinputlen, 4, EMBEDDING_DIM))
         ytrain = []
-        pos_onehot = PreCoParser.get_pos_onehot()
+        pos_onehot = PreCoParser.get_pos_onehot_map()
         deps_onehot = PreCoParser.get_spacy_deps_onehot()
 
         bar = IncrementalBar('*\tParsing data into xtrain, ytrain', max=len(data))
@@ -225,14 +223,13 @@ class PreCoParser:
             curr_sent = key.sentence
 
             sentence_embeddings = PreCoParser.get_embedding_for_sent(curr_sent, embedding_model)
-            sent_pos = PreCoParser.get_pos_onehot_for_sent(curr_sent, pos_onehot)
+            sent_pos = PreCoParser.get_pos_onehot_map_for_sent(curr_sent, pos_onehot)
             dep_embeddings = PreCoParser.get_dep_embeddings(curr_sent, embedding_model)
             deps = PreCoParser.get_deps_onehot(curr_sent)
 
             if PreCoParser._invalid_data(sentence_embeddings, dep_embeddings, curr_sent, maxinputlen, maxoutputlen):
                 # Unusable data
                 bar.next()
-                print("TITS")
                 continue
 
             assert len(curr_sent) == sentence_embeddings.shape[0]
@@ -269,5 +266,5 @@ def main():
     xtrain, ytrain = PreCoParser.get_train_data(data)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

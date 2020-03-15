@@ -11,7 +11,7 @@ from keras.preprocessing import sequence
 from neuralcorefres.model.word_embedding import EMBEDDING_DIM
 
 # Enable AMD GPU usage
-os.environ["KERAS_BACKEND"] = "plaidml.keras.backend"
+os.environ['KERAS_BACKEND'] = 'plaidml.keras.backend'
 
 Tensor = List[float]
 
@@ -71,7 +71,7 @@ class ClusterNetwork():
     def train(self):
         self._pad_sequences()
         self.model.fit(self.xtrain, self.ytrain, epochs=3)
-        self.model.save(".././data/models/clusters/small.h5")
+        self.model.save('.././data/models/clusters/small.h5')
         score, acc = self.model.evaluate(self.xtest, self.ytest)
         print(score, acc)
 
