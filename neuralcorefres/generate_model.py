@@ -96,21 +96,16 @@ def preco_parser_demo(data):
     # embedding_model = WordEmbedding(model_path='.././data/models/word_embeddings/preco-vectors.model')
     embedding_model = WordEmbedding(model_path='.././data/models/word_embeddings/google-vectors.model')
     data = PreCoParser.prep_for_nn(data)
-    xtrain, ytrain = PreCoParser.get_train_data(data, INPUT_MAXLEN, OUTPUT_MAXLEN, embedding_model)
+    x_train, y_train = PreCoParser.get_train_data(data, INPUT_MAXLEN, OUTPUT_MAXLEN, embedding_model)
 
     gc.collect()
     np.set_printoptions(threshold=sys.maxsize)
 
-    # cluster_network = ClusterNetwork(xtrain[:8000], ytrain[:8000], xtrain[8000:],
-    #                                  ytrain[8000:], inputmaxlen=INPUT_MAXLEN, outputlen=OUTPUT_MAXLEN)
-    cluster_network = ClusterNetwork(xtrain[:190], ytrain[:190], xtrain[190:],
-                                     ytrain[190:], inputmaxlen=INPUT_MAXLEN, outputlen=OUTPUT_MAXLEN)
+    # cluster_network = ClusterNetwork(x_train[:8000], y_train[:8000], x_train[8000:],
+    #                                  y_train[8000:], inputmaxlen=INPUT_MAXLEN, outputlen=OUTPUT_MAXLEN)
+    cluster_network = ClusterNetwork(x_train[:190], y_train[:190], x_train[190:],
+                                     y_train[190:], inputmaxlen=INPUT_MAXLEN, outputlen=OUTPUT_MAXLEN)
     cluster_network.train()
-
-
-# def train_model():
-#     data = PreCoParser.get_preco_data(PreCoDataType.TEST)
-#     preco_parser_demo(data)
 
 
 def grouper(iterable, n, fillvalue=None):
@@ -136,29 +131,34 @@ def parse_clusters():
 
 
 def train_model():
-    sents, clusters = ParseClusters.get_from_file('../data/PreCo_1.0/custom_dps/dev.json')[:50]
-    xtrain, ytrain = CoreferenceNetwork.custom_cluster_to_nn_input(sents, clusters)
+    sents, clusters = ParseClusters.get_from_file('../data/PreCo_1.0/custom_dps/dev.json')
+    x_train, y_train = CoreferenceNetwork.custom_cluster_to_nn_input(sents[:100], clusters[:100])
+
+    print(x_train[40][0].shape)
+    print(x_train[40][1].shape)
+    print(x_train[40][2].shape)
+    print(x_train[40][3].shape)
+    print(x_train[40][4].shape)
+    print(x_train[40][5].shape)
+    print(x_train[40][6].shape)
+    print(x_train.shape, y_train.shape)
+
+    INPUT_MAXLEN = 125
+    OUTPUT_MAXLEN = 125
+    coreference_network = CoreferenceNetwork(x_train[:int(len(x_train)*0.9)], y_train[:int(len(x_train)*0.9)], x_train[int(len(x_train)*0.9):],
+                                             y_train[int(len(x_train)*0.9):], inputmaxlen=INPUT_MAXLEN, outputlen=OUTPUT_MAXLEN)
+    coreference_network.train()
 
 
 def predict_from_model():
-    # cluster_model = ClusterNetwork()
-    # cluster_model.load_saved('.././data/models/clusters/small.h5')
-    # embedding_model = WordEmbedding(model_path='.././data/models/word_embeddings/preco-vectors.model')
+    sent = 'Charlie Schnlez ran to the park where he had fun.'
+    sent = 'Sara walked around town and she saw Target.'
+    sent = 'They say that sticks and stones may break your bones, but will never hurt you.'
 
-    # sent = ['``', 'Is', 'there', 'anything', 'else', 'you', 'need', ',', 'honey', '?', '\'\'']
-    # embeddings = embedding_model.get_embeddings(sent)
-    # pos_onehot = PreCoParser.get_pos_onehot_map_for_sent(sent, PreCoParser.get_pos_onehot_map())
-    # padded_pos = np.asarray(sequence.pad_sequences([pos_onehot], maxlen=125, dtype='float32'))
-    # print(cluster_model.predict(embeddings, padded_pos) * len(sent))
-
-    
-    sent = "Charlie Schnelz ran to the park and he, Charlie, had an absolute blast!"
-    ents = ParseClusters.get_named_entities(sent)
-    print(ents)
+    coreference_network = CoreferenceNetwork()
+    coreference_network.predict(sent)
 
 
 if __name__ == '__main__':
-    # word_embeddings_demo()
     train_model()
     # predict_from_model()
-    # parse_clusters()

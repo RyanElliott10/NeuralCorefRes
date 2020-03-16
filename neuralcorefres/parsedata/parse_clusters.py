@@ -23,13 +23,19 @@ pretty_printer = pprint.PrettyPrinter()
 
 ClusterIndices = List[List[int]]
 
-REDUCED_SPACY_NE_TAGS = ['PERSON', 'NORP', 'FAC', 'ORG', 'GPE', 'LOC', 'PRODUCT', 'EVENT', 'WORK_OF_ART', 'LAW', 'LANGUAGE', 'DATE', 'TIME']
+REDUCED_SPACY_NE_TAGS = ['PERSON', 'NORP', 'FAC', 'ORG', 'GPE', 'LOC',
+                         'PRODUCT', 'EVENT', 'WORK_OF_ART', 'LAW', 'LANGUAGE', 'DATE', 'TIME']
 REDUCED_SPACY_TAGS = ['NN', 'NNP', 'NNPS', 'NNS', 'PRP', 'PRP$', 'WP']
 
 nlp = spacy.load('en_core_web_sm')
 
 
 class ParseClusters:
+    @staticmethod
+    def tokenize_sent(sent: str) -> List[str]:
+        doc = nlp(sent)
+        return [ent.text for ent in doc]
+
     @staticmethod
     def _get_all_indices(arr: List[str], entity: str) -> List[Tuple[int, int]]:
         """ Takes a tokenized sentence and multi-word entity and returns the indices that entity appears within the sentence. """

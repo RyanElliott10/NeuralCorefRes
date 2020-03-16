@@ -248,7 +248,8 @@ class PreCoParser:
             del cluster_indices[0::3]
             assert len(cluster_indices) % 2 == 0
 
-            cluster_indices = sequence.pad_sequences([cluster_indices], maxlen=maxoutputlen, dtype='float32', padding='post')[0]
+            cluster_indices = sequence.pad_sequences(
+                [cluster_indices], maxlen=maxoutputlen, dtype='float32', padding='post')[0]
             assert cluster_indices.shape == (maxoutputlen,)
 
             ytrain.append(np.asarray(cluster_indices) / len(curr_sent))
