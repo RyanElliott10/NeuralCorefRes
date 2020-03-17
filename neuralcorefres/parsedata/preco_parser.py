@@ -14,15 +14,16 @@ from typing import DefaultDict, List, Tuple
 
 import numpy as np
 import pandas as pd
-from keras.preprocessing import sequence
-from keras.utils import to_categorical
+from tensorflow.keras.preprocessing import sequence
+from tensorflow.keras.utils import to_categorical
 from nltk import pos_tag
 from nltk.data import load
 from progress.bar import IncrementalBar
 import spacy
 
-from neuralcorefres.model.word_embedding import EMBEDDING_DIM
 from neuralcorefres.feature_extraction.stanford_parse_api import StanfordParseAPI
+
+EMBEDDING_DIM = 300
 
 Cluster = List[str]
 Tensor = List[float]
@@ -170,7 +171,7 @@ class PreCoParser:
 
     @staticmethod
     def pad_1d_tensor(t, maxlen=EMBEDDING_DIM):
-        return sequence.pad_sequences([t], maxlen=EMBEDDING_DIM, dtype='float32', padding='post')[0]
+        return sequence.pad_sequences([t], maxlen=EMBEDDING_DIM, dtype='float16', padding='post')[0]
 
     @staticmethod
     def _invalid_data(sentence_embeddings: Tensor, dep_embeddings: Tensor, curr_sent: List[str], maxinputlen: int, maxoutputlen: int) -> bool:
@@ -249,14 +250,14 @@ class PreCoParser:
             assert len(cluster_indices) % 2 == 0
 
             cluster_indices = sequence.pad_sequences(
-                [cluster_indices], maxlen=maxoutputlen, dtype='float32', padding='post')[0]
+                [cluster_indices], maxlen=maxoutputlen, dtype='float16', padding='post')[0]
             assert cluster_indices.shape == (maxoutputlen,)
 
             ytrain.append(np.asarray(cluster_indices) / len(curr_sent))
             bar.next()
 
         gc.collect()
-        ytrain = np.asarray(ytrain, dtype='float32')
+        ytrain = np.asarray(ytrain, dtype='float16')
         assert ytrain[0].shape == (maxoutputlen,)
 
         return (xtrain, ytrain)

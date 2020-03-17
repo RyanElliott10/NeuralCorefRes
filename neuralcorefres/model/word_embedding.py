@@ -12,12 +12,12 @@ from typing import List, Sequence
 
 import numpy as np
 from gensim.models import KeyedVectors, Word2Vec
-from keras.preprocessing.sequence import pad_sequences
-from keras.preprocessing.text import Tokenizer
-from keras.utils import to_categorical
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from progress.bar import IncrementalBar
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.utils import to_categorical
 
 from neuralcorefres.common.sentence import Sentence
 
@@ -36,16 +36,16 @@ class WordEmbedding:
 
     def _load_model(self, model_path: str, sents: List[Sentence], is_tokenized: bool):
         if model_path is not None and os.path.exists(model_path):
-            print('*\tLoading model')
+            print(' *\tLoading word embedding model')
             model = KeyedVectors.load(model_path)
             word_vectors = model
         elif sents is None:
-            print('*\tLoading Google News word vectors...')
+            print(' *\tLoading Google News word vectors...')
             model = KeyedVectors.load_word2vec_format('.././data/GoogleNews-vectors-negative300.bin.gz', binary=True)
             model.wv.save(model_path)
             word_vectors = model
         else:
-            print('*\tTraining model on new data...')
+            print(' *\tTraining model on new data...')
             if is_tokenized:
                 model = Word2Vec(sentences=sents, size=EMBEDDING_DIM, workers=5)
             else:
@@ -115,4 +115,4 @@ class WordEmbedding:
             if verbose:
                 bar.next()
 
-        return np.asarray(embeddings)
+        return np.asarray(embeddings, dtype='float16')

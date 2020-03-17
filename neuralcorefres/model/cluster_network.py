@@ -3,10 +3,10 @@ from typing import List
 
 import numpy as np
 import tensorflow as tf
-from keras import Sequential
-from keras.layers import LSTM, Conv2D, Dense, Dropout, Flatten, MaxPooling2D, TimeDistributed
-from keras.optimizers import SGD, Adam, RMSprop
-from keras.preprocessing import sequence
+from tensorflow.keras import Sequential
+from tensorflow.keras.layers import LSTM, Conv2D, Dense, Dropout, Flatten, MaxPooling2D, TimeDistributed
+from tensorflow.keras.optimizers import SGD, Adam, RMSprop
+from tensorflow.keras.preprocessing import sequence
 
 from neuralcorefres.model.word_embedding import EMBEDDING_DIM
 
@@ -22,7 +22,7 @@ the coreference network?
 
 
 class ClusterNetwork():
-    def __init__(self, xtrain: List[Tensor] = [], ytrain: List[Tensor] = [], xtest: List[Tensor] = [], ytest: List[Tensor] = [], inputmaxlen: int = 125, outputlen: int = 125):
+    def __init__(self, xtrain: List[Tensor] = [], ytrain: List[Tensor] = [], xtest: List[Tensor] = [], ytest: List[Tensor] = [], inputmaxlen: int = 128, outputlen: int = 128):
         self.xtrain = xtrain
         self.ytrain = ytrain
         self.xtest = xtest
@@ -62,8 +62,8 @@ class ClusterNetwork():
         self.model.summary()
 
     def _pad_sequences(self):
-        self.ytrain = sequence.pad_sequences(self.ytrain, maxlen=self.OUTPUT_LEN, dtype='float32', padding='post')
-        self.ytest = sequence.pad_sequences(self.ytest, maxlen=self.OUTPUT_LEN, dtype='float32', padding='post')
+        self.ytrain = sequence.pad_sequences(self.ytrain, maxlen=self.OUTPUT_LEN, dtype='float16', padding='post')
+        self.ytest = sequence.pad_sequences(self.ytest, maxlen=self.OUTPUT_LEN, dtype='float16', padding='post')
 
         assert self.xtrain[0].shape == (self.INPUT_MAXLEN, 3, EMBEDDING_DIM)
         assert self.ytrain.shape == (self.xtrain.shape[0], self.OUTPUT_LEN)
@@ -77,7 +77,7 @@ class ClusterNetwork():
 
     def predict(self, embeddings: Tensor, padded_pos: Tensor):
         padded_embeddings = np.asarray(sequence.pad_sequences(
-            [embeddings], maxlen=self.INPUT_MAXLEN, dtype='float32'))
+            [embeddings], maxlen=self.INPUT_MAXLEN, dtype='float16'))
         print(padded_embeddings.shape)
         print(padded_pos.shape)
         # return self.model.predict(padded_embeddings)

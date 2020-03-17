@@ -3,5 +3,6 @@ from neuralcorefres.model.word_embedding import *
 
 __all__ = [
     "ClusterNetwork",
-    "WordEmbedding"
+    "WordEmbedding",
+    "EMBEDDING_DIM"
 ]

@@ -15,18 +15,16 @@ from typing import List
 
 import nltk
 import numpy as np
-from keras.preprocessing import sequence
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from progress.bar import IncrementalBar
+from tensorflow.keras.preprocessing import sequence
 
 sys.path.append(os.path.abspath(f'{os.path.dirname(os.path.abspath(__file__))}/../'))
 import neuralcorefres.parsedata.gap_parser as GAPParse
 from neuralcorefres.common import Sentence
 from neuralcorefres.feature_extraction.gender_classifier import (
     GENDERED_NOUN_PREFIXES, GenderClassifier)
-from neuralcorefres.feature_extraction.stanford_parse_api import \
-    StanfordParseAPI
 from neuralcorefres.model.cluster_network import ClusterNetwork
 from neuralcorefres.model.coreference_network import CoreferenceNetwork
 from neuralcorefres.model.word_embedding import WordEmbedding
@@ -101,8 +99,6 @@ def preco_parser_demo(data):
     gc.collect()
     np.set_printoptions(threshold=sys.maxsize)
 
-    # cluster_network = ClusterNetwork(x_train[:8000], y_train[:8000], x_train[8000:],
-    #                                  y_train[8000:], inputmaxlen=INPUT_MAXLEN, outputlen=OUTPUT_MAXLEN)
     cluster_network = ClusterNetwork(x_train[:190], y_train[:190], x_train[190:],
                                      y_train[190:], inputmaxlen=INPUT_MAXLEN, outputlen=OUTPUT_MAXLEN)
     cluster_network.train()
@@ -131,34 +127,45 @@ def parse_clusters():
 
 
 def train_model():
+    def generate_data():
+        """ For batching data when training on entire dataset. """
+        while True:
+            for i in range(35):
+                for j in range(1, 11):
+                    sents, clusters = ParseClusters.get_from_file(f'../data/PreCo_1.0/custom_dps/train_b{i}.json')
+                    x_train, y_train = CoreferenceNetwork.custom_cluster_to_nn_input(
+                        sents[(j-1)*100:j*100], clusters[(j-1)*100:j*100])
+                    yield x_train, y_train
+
+        print(x_train.shape, y_train.shape)
+
+    INPUT_MAXLEN = 128
+    OUTPUT_MAXLEN = 128
+
     sents, clusters = ParseClusters.get_from_file('../data/PreCo_1.0/custom_dps/dev.json')
-    x_train, y_train = CoreferenceNetwork.custom_cluster_to_nn_input(sents[:100], clusters[:100])
+    x_train, y_train = CoreferenceNetwork.custom_cluster_to_nn_input(sents[:1], clusters[:1])
 
-    print(x_train[40][0].shape)
-    print(x_train[40][1].shape)
-    print(x_train[40][2].shape)
-    print(x_train[40][3].shape)
-    print(x_train[40][4].shape)
-    print(x_train[40][5].shape)
-    print(x_train[40][6].shape)
-    print(x_train.shape, y_train.shape)
-
-    INPUT_MAXLEN = 125
-    OUTPUT_MAXLEN = 125
+    print('\n * x_train, y_train shape before:', x_train.shape, y_train.shape)
     coreference_network = CoreferenceNetwork(x_train[:int(len(x_train)*0.9)], y_train[:int(len(x_train)*0.9)], x_train[int(len(x_train)*0.9):],
                                              y_train[int(len(x_train)*0.9):], inputmaxlen=INPUT_MAXLEN, outputlen=OUTPUT_MAXLEN)
-    coreference_network.train()
+    eval = coreference_network.train()
+    print(eval)
 
 
 def predict_from_model():
     sent = 'Charlie Schnlez ran to the park where he had fun.'
     sent = 'Sara walked around town and she saw Target.'
     sent = 'They say that sticks and stones may break your bones, but will never hurt you.'
+    sent = 'my dad asked me as he put three twenty dollar bills in my hand.'
+    # sent = '``Is there anything else you need, honey?\'\''
 
     coreference_network = CoreferenceNetwork()
-    coreference_network.predict(sent)
+    preds = coreference_network.predict(sent)
+
+    print(sent)
+    pprint.pprint(preds)
 
 
 if __name__ == '__main__':
     train_model()
-    # predict_from_model()
+    predict_from_model()
