@@ -7,6 +7,7 @@
 
 import random
 from typing import Dict, List, Tuple
+import sys
 
 import nltk
 from nltk.corpus import names
@@ -35,23 +36,21 @@ class GenderClassifier:
         }
 
     def train_model(self) -> nltk.NaiveBayesClassifier:
-        male_labeled_names = [(name, 'male')
-                              for name in names.words('male.txt')]
-        female_labeled_names = [(name, 'female')
-                                for name in names.words('female.txt')]
+        male_labeled_names = [(name, 'male') for name in names.words('male.txt')]
+        female_labeled_names = [(name, 'female') for name in names.words('female.txt')]
         labeled_names = male_labeled_names + female_labeled_names
         random.shuffle(labeled_names)
 
         featuresets = [(GenderClassifier.gender_features(n), gender)for (n, gender) in labeled_names]
 
-        train_set = featuresets[500:]
+        train_set = featuresets
         classifier = nltk.NaiveBayesClassifier.train(train_set)
         return classifier
 
     def get_gender(self, word: str) -> str:
         if word in HARD_GENDERED_WORDS:
             return HARD_GENDERED_WORDS[word]
-        return self._classifier.prob_classify(GenderClassifier.gender_features(word))
+        return self._classifier.classify(GenderClassifier.gender_features(word))
 
     def get_genders(self, sent: str) -> List[Tuple[Tuple[str, str], str]]:
         tokenized = nltk.word_tokenize(sent)
@@ -64,3 +63,8 @@ class GenderClassifier:
         tokenized = nltk.word_tokenize(sent)
         for word in tokenized:
             yield (word, self.get_gender(word))
+
+
+if __name__ == '__main__':
+    classifier = GenderClassifier()
+    print(classifier.get_gender(sys.argv[1]))
