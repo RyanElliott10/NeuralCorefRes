@@ -5,6 +5,7 @@
 #
 # For license information, see LICENSE
 
+import argparse
 import gc
 import os
 import pprint
@@ -126,7 +127,7 @@ def parse_clusters():
         ParseClusters.write_custom_to_file(reductions, f'../data/PreCo_1.0/custom_dps/train_b{i+4}.json')
 
 
-def train_model():
+def train_model(samples: int):
     def generate_data():
         """ For batching data when training on entire dataset. """
         while True:
@@ -142,22 +143,22 @@ def train_model():
     INPUT_MAXLEN = 128
     OUTPUT_MAXLEN = 128
 
-    sents, clusters = ParseClusters.get_from_file('../data/PreCo_1.0/custom_dps/dev.json')
-    x_train, y_train = CoreferenceNetwork.custom_cluster_to_nn_input(sents[:1], clusters[:1])
+    sents, clusters = ParseClusters.get_from_file('../data/PreCo_1.0/custom_dps/train_b0.json')
+    x_train, y_train = CoreferenceNetwork.custom_cluster_to_nn_input(sents[:samples], clusters[:samples])
 
     print('\n * x_train, y_train shape before:', x_train.shape, y_train.shape)
+    # x_train = np.reshape(x_train, (x_train.shape[0], x_train.shape[2], x_train.shape[1], x_train.shape[3]))
+    x_train = np.reshape(x_train, (x_train.shape[0], x_train.shape[2], x_train.shape[3], x_train.shape[1]))
+    # print('\n * x_train, y_train shape after:', x_train.shape, y_train.shape)
+
     coreference_network = CoreferenceNetwork(x_train[:int(len(x_train)*0.9)], y_train[:int(len(x_train)*0.9)], x_train[int(len(x_train)*0.9):],
                                              y_train[int(len(x_train)*0.9):], inputmaxlen=INPUT_MAXLEN, outputlen=OUTPUT_MAXLEN)
     eval = coreference_network.train()
     print(eval)
 
 
-def predict_from_model():
-    sent = 'Charlie Schnlez ran to the park where he had fun.'
-    sent = 'Sara walked around town and she saw Target.'
-    sent = 'They say that sticks and stones may break your bones, but will never hurt you.'
-    sent = 'my dad asked me as he put three twenty dollar bills in my hand.'
-    # sent = '``Is there anything else you need, honey?\'\''
+def predict_from_model(sent: str = None):
+    sent = 'Charlie ran to the park where he proceeded to meet a new friend.'
 
     coreference_network = CoreferenceNetwork()
     preds = coreference_network.predict(sent)
@@ -167,5 +168,12 @@ def predict_from_model():
 
 
 if __name__ == '__main__':
-    train_model()
-    predict_from_model()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-p', '--predict', type=str, help='Sentence to predict on')
+    parser.add_argument('-t', '--train', action='store_true', help='Train a model')
+    parser.add_argument('--samples', type=int, default=sys.maxsize, help='Limit the training samples')
+    args = parser.parse_args()
+    if args.train:
+        train_model(args.samples)
+    elif args.predict:
+        predict_from_model(args.predict)

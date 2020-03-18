@@ -1,7 +1,20 @@
 # NeuralCorefRes
-Coreference resolution
+Coreference resolution using a CNN/LSTM neural network.
+
+Ryan Elliott
 
 ## Usage
+### Training
+Training requires the `data` directory to, at the very least, containg the following paths:
+
+- `data/PreCo_1.0/custom_dps/train_b<n>.json`
+- `data/models/word_embeddings/preco-vectors.model`
+
+You can then proceed to run `python3 generate_data.py -t`. Please note this command will not train on the entire dataset. This has been limited to one file to avoid requiring the use of batches. If the program is terminated before it's able to start training, reduce the number of training samples. This can be done by adding an optional flag, `--samples <num>`.
+
+### Predictions
+Run `python3 generate_data.py -p "This is a sentence that should be predicted on."`
+
 ### StanfordCoreNLP
 Download the Stanford CoreNLP and CoreNLP server [utility here](https://stanfordnlp.github.io/CoreNLP/download.html). Unzip the file and move to a data directory by running the following commands:
 

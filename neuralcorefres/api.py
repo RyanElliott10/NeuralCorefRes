@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+# Simple flask server to decrease data preprocessing times.
+#
+# Author: Ryan Elliott <ryan.elliott31@gmail.com>
+#
+# For license information, see LICENSE
+
 import os
 import sys
 
