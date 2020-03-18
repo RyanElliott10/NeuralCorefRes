@@ -30,9 +30,9 @@ class ClusterNetwork():
         self.INPUT_MAXLEN = inputmaxlen
         self.OUTPUT_LEN = outputlen
 
-        # if len(self.xtrain) > 0:
-        #     assert self.xtrain[0].shape == (self.INPUT_MAXLEN, 3, EMBEDDING_DIM)
-        #     assert self.ytrain.shape == (self.xtrain.shape[0], self.OUTPUT_LEN)
+        if len(self.xtrain) > 0:
+            assert self.xtrain[0].shape == (self.INPUT_MAXLEN, 3, EMBEDDING_DIM)
+            assert self.ytrain.shape == (self.xtrain.shape[0], self.OUTPUT_LEN)
 
         self._build_model()
 

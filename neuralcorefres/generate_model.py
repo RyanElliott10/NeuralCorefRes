@@ -147,9 +147,6 @@ def train_model(samples: int):
     x_train, y_train = CoreferenceNetwork.custom_cluster_to_nn_input(sents[:samples], clusters[:samples])
 
     print('\n * x_train, y_train shape before:', x_train.shape, y_train.shape)
-    # x_train = np.reshape(x_train, (x_train.shape[0], x_train.shape[2], x_train.shape[1], x_train.shape[3]))
-    x_train = np.reshape(x_train, (x_train.shape[0], x_train.shape[2], x_train.shape[3], x_train.shape[1]))
-    # print('\n * x_train, y_train shape after:', x_train.shape, y_train.shape)
 
     coreference_network = CoreferenceNetwork(x_train[:int(len(x_train)*0.9)], y_train[:int(len(x_train)*0.9)], x_train[int(len(x_train)*0.9):],
                                              y_train[int(len(x_train)*0.9):], inputmaxlen=INPUT_MAXLEN, outputlen=OUTPUT_MAXLEN)
@@ -158,8 +155,6 @@ def train_model(samples: int):
 
 
 def predict_from_model(sent: str = None):
-    sent = 'Charlie ran to the park where he proceeded to meet a new friend.'
-
     coreference_network = CoreferenceNetwork()
     preds = coreference_network.predict(sent)
 

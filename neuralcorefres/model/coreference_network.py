@@ -50,15 +50,14 @@ class CoreferenceNetwork:
         if len(self.x_train) > 0:
             self._build_model()
 
-            # assert self.x_train[0].shape == (7, self.INPUT_MAXLEN, EMBEDDING_DIM)
-            # assert self.y_train.shape == (self.x_train.shape[0], self.OUTPUT_LEN)
+            assert self.x_train[0].shape == (7, self.INPUT_MAXLEN, EMBEDDING_DIM)
+            assert self.y_train.shape == (self.x_train.shape[0], self.OUTPUT_LEN)
 
     def load_saved(self, path: str):
         self.model = tf.keras.models.load_model(path)
 
     def _build_model(self):
-        # INPUT_SHAPE = (7, self.INPUT_MAXLEN, EMBEDDING_DIM)
-        INPUT_SHAPE = (self.INPUT_MAXLEN, EMBEDDING_DIM, 7)
+        INPUT_SHAPE = (7, self.INPUT_MAXLEN, EMBEDDING_DIM)
         CHAN_DIM = -1
         self.model = tf.keras.models.Sequential()
 
